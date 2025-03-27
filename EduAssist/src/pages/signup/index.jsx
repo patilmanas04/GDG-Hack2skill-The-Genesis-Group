@@ -15,6 +15,7 @@ import { styled } from "@mui/material/styles";
 import { GoogleIcon } from "../../components/signup/CustomIcons";
 import { Link, useNavigate } from "react-router";
 import { FirebaseContext } from "../../contexts/FirebaseProvider";
+import { UserContext } from "../../contexts/UserProvider";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -38,6 +39,8 @@ const SignUp = () => {
   const navigate = useNavigate();
   const firebaseContext = useContext(FirebaseContext);
   const { signupUserWithEmailAndPassword } = firebaseContext;
+  const userContext = useContext(UserContext);
+  const { setUserCredentials } = userContext;
 
   const [emailError, setEmailError] = useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = useState("");
@@ -82,26 +85,29 @@ const SignUp = () => {
     return isValid;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (validateInputs()) {
       const data = new FormData(event.currentTarget);
-      console.log({
-        name: data.get("name"),
-        email: data.get("email"),
-        password: data.get("password"),
-      });
 
-      const result = signupUserWithEmailAndPassword(
+      const result = await signupUserWithEmailAndPassword(
         data.get("name"),
         data.get("email"),
         data.get("password")
       );
 
-      if (result) {
+      if (result.success) {
+        setUserCredentials({
+          name: data.get("name"),
+          email: data.get("email"),
+          photo: "",
+          role: "student",
+          uid: result.user.uid,
+        });
+
         navigate("/");
       } else {
-        alert("An error occurred while signing up. Please try again later.");
+        alert(result.message);
       }
     }
   };

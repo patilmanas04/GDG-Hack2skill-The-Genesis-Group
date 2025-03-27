@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
@@ -7,18 +7,16 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Divider from "@mui/material/Divider";
 import FormLabel from "@mui/material/FormLabel";
 import FormControl from "@mui/material/FormControl";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import MuiCard from "@mui/material/Card";
 import { styled } from "@mui/material/styles";
 // import ForgotPassword from "./components/ForgotPassword";
-import {
-  GoogleIcon,
-  FacebookIcon,
-  SitemarkIcon,
-} from "../../components/signin/CustomIcons";
+import { GoogleIcon } from "../../components/signin/CustomIcons";
+import { FirebaseContext } from "../../contexts/FirebaseProvider";
+import { UserContext } from "../../contexts/UserProvider";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -44,6 +42,12 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 }));
 
 const Signin = (props) => {
+  const navigate = useNavigate();
+  const firebaseContext = useContext(FirebaseContext);
+  const { signinUserWithEmailAndPassword } = firebaseContext;
+  const userContext = useContext(UserContext);
+  const { setUserCredentials } = userContext;
+
   const [emailError, setEmailError] = useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = useState("");
   const [passwordError, setPasswordError] = useState(false);
@@ -53,11 +57,27 @@ const Signin = (props) => {
   const handleClickOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (emailError || passwordError) return;
     const data = new FormData(event.currentTarget);
-    console.log({ email: data.get("email"), password: data.get("password") });
+
+    const email = data.get("email");
+    const password = data.get("password");
+    const result = await signinUserWithEmailAndPassword(email, password);
+
+    if (result.success) {
+      setUserCredentials({
+        name: result.user.name,
+        email: result.user.name,
+        photo: result.user.photo,
+        role: result.user.role,
+        uid: result.user.uid,
+      });
+      navigate("/");
+    } else {
+      alert(result.message);
+    }
   };
 
   const validateInputs = () => {
@@ -132,10 +152,10 @@ const Signin = (props) => {
                 variant="outlined"
               />
             </FormControl>
-            <FormControlLabel
+            {/* <FormControlLabel
               control={<Checkbox value="remember" color="primary" />}
               label="Remember me"
-            />
+            /> */}
             {/* <ForgotPassword open={open} handleClose={handleClose} /> */}
             <Button
               type="submit"
