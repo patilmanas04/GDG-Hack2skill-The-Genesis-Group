@@ -69,7 +69,7 @@ const Signin = (props) => {
     if (result.success) {
       setUserCredentials({
         name: result.user.name,
-        email: result.user.name,
+        email: result.user.email,
         photo: result.user.photo,
         role: result.user.role,
         uid: result.user.uid,

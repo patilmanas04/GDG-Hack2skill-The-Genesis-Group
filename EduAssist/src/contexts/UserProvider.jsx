@@ -11,8 +11,17 @@ const UserProvider = ({ children }) => {
     uid: "",
   });
 
+  const [uploadedAssignments, setUploadedAssignments] = useState([]);
+
   return (
-    <UserContext.Provider value={{ userCredentials, setUserCredentials }}>
+    <UserContext.Provider
+      value={{
+        userCredentials,
+        setUserCredentials,
+        setUploadedAssignments,
+        uploadedAssignments,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );

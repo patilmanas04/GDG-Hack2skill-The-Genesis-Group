@@ -5,18 +5,25 @@ import {
   getAuth,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { getDocs, getFirestore } from "firebase/firestore";
-import { collection, addDoc, query, where } from "firebase/firestore";
+import { getDocs, getFirestore, Timestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 
 const FirebaseContext = createContext(null);
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDCPYzthVcI5O5l_msyxG_PrhiTnfi0ojU",
-  authDomain: "eduassist-779d0.firebaseapp.com",
-  projectId: "eduassist-779d0",
-  storageBucket: "eduassist-779d0.firebasestorage.app",
-  messagingSenderId: "357320846330",
-  appId: "1:357320846330:web:6a8d9fe94509ce31efd243",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
@@ -99,6 +106,76 @@ const FirebaseProvider = ({ children }) => {
     auth.signOut();
   };
 
+  const addAssignment = async (
+    title,
+    subject,
+    dueDate,
+    teacherUid,
+    teacherName,
+    docUrl,
+    pdfPublicId
+  ) => {
+    try {
+      const docRef = await addDoc(collection(db, "assignments"), {
+        createdAt: new Date().toLocaleDateString(),
+        title: title,
+        subject: subject,
+        dueDate: new Date(dueDate).toLocaleDateString(),
+        teacherUid: teacherUid,
+        teacherName: teacherName,
+        docUrl: docUrl,
+        pdfPublicId: pdfPublicId,
+      });
+
+      return {
+        success: true,
+        message: "Assignment added successfully!",
+      };
+    } catch (error) {
+      console.log(error);
+      return {
+        success: false,
+        message: "Error adding assignment!",
+      };
+    }
+  };
+
+  const getAssignments = async (teacherUid) => {
+    try {
+      const q = query(
+        collection(db, "assignments"),
+        where("teacherUid", "==", teacherUid)
+      );
+      const querySnapshot = await getDocs(q);
+      let assignments = [];
+
+      querySnapshot.forEach((doc) => {
+        assignments.push({ ...doc.data(), id: doc.id });
+      });
+
+      return assignments;
+    } catch (error) {
+      console.log(error);
+      return [];
+    }
+  };
+
+  const deleteAssignment = async (assignmentId) => {
+    try {
+      await deleteDoc(doc(db, "assignments", assignmentId));
+      return {
+        success: true,
+        message: "Assignment deleted successfully!",
+      };
+    } catch (error) {
+      console.log(error);
+      return {
+        success: false,
+        message: "Error deleting assignment!",
+      };
+    }
+  };
+
   return (
     <FirebaseContext.Provider
       value={{
@@ -106,6 +183,9 @@ const FirebaseProvider = ({ children }) => {
         signinUserWithEmailAndPassword,
         getUserDetailsByUid,
         signoutUser,
+        addAssignment,
+        getAssignments,
+        deleteAssignment,
       }}
     >
       {children}

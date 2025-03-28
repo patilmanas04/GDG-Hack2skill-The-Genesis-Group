@@ -1,14 +1,14 @@
 import React, { useContext, useEffect } from "react";
 import { UserContext } from "../../contexts/UserProvider";
-import TeacherDashboard from "../teacher_dashboard";
-import StudentDashboard from "../student_dashboard";
+import TeacherDashboard from "../../pages/TeacherDashboardLayout";
+import StudentDashboard from "../../pages/StudentDashboardLayout";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router";
 import { FirebaseContext } from "../../contexts/FirebaseProvider";
 
 const auth = getAuth();
 
-const Dashboard = () => {
+const DashboardLayout = () => {
   const navigate = useNavigate();
   const userContext = useContext(UserContext);
   const { userCredentials, setUserCredentials } = userContext;
@@ -35,10 +35,10 @@ const Dashboard = () => {
   }, []);
 
   return userCredentials.role === "teacher" ? (
-    <TeacherDashboard />
+    <TeacherDashboard userCredentials={userCredentials} />
   ) : (
-    <StudentDashboard />
+    <StudentDashboard userCredentials={userCredentials} />
   );
 };
 
-export default Dashboard;
+export default DashboardLayout;
