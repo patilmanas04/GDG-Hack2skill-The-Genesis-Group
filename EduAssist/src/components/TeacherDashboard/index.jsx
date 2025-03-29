@@ -33,7 +33,6 @@ import { FirebaseContext } from "../../contexts/FirebaseProvider";
 import { UserContext } from "../../contexts/UserProvider";
 import DeleteIcon from "@mui/icons-material/Delete";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import CryptoJS from "crypto-js";
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
@@ -135,7 +134,7 @@ const TeacherDashboard = () => {
     setSubject("");
     setUploadedFile(null);
 
-    const { pdfUrl, pdfPublicId } = await uploadFile(uploadedFile);
+    const { pdfUrl, pdfPublicId } = await uploadFile(uploadedFile, "teacher");
     if (!pdfUrl) {
       alert("File upload failed. Please try again.");
       return;

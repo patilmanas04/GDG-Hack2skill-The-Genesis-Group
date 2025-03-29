@@ -13,6 +13,7 @@ import {
   where,
   deleteDoc,
   doc,
+  updateDoc,
 } from "firebase/firestore";
 
 const FirebaseContext = createContext(null);
@@ -160,6 +161,57 @@ const FirebaseProvider = ({ children }) => {
     }
   };
 
+  const getAllAssignments = async () => {
+    try {
+      const q = query(collection(db, "assignments"));
+      const querySnapshot = await getDocs(q);
+      let assignments = [];
+
+      querySnapshot.forEach((doc) => {
+        assignments.push({ ...doc.data(), id: doc.id });
+      });
+
+      assignments.sort((a, b) => {
+        return new Date(a.dueDate) - new Date(b.dueDate);
+      });
+
+      return {
+        success: true,
+        assignments: assignments,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: "Error fetching assignments!",
+      };
+    }
+  };
+
+  const getAssignmentsBySubject = async (subject) => {
+    try {
+      const q = query(
+        collection(db, "assignments"),
+        where("subject", "==", subject)
+      );
+      const querySnapshot = await getDocs(q);
+      let assignments = [];
+
+      querySnapshot.forEach((doc) => {
+        assignments.push({ ...doc.data(), id: doc.id });
+      });
+
+      return {
+        success: true,
+        assignments: assignments,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: "Error fetching assignments!",
+      };
+    }
+  };
+
   const deleteAssignment = async (assignmentId) => {
     try {
       await deleteDoc(doc(db, "assignments", assignmentId));
@@ -176,6 +228,111 @@ const FirebaseProvider = ({ children }) => {
     }
   };
 
+  const addSubmission = async (
+    subject,
+    studentUid,
+    studentName,
+    assignmentId,
+    assignmentTitle,
+    teacherUid,
+    docUrl
+  ) => {
+    try {
+      const docRef = await addDoc(collection(db, "submissions"), {
+        createdAt: new Date().toLocaleDateString(),
+        subject: subject,
+        studentUid: studentUid,
+        studentName: studentName,
+        assignmentId: assignmentId,
+        assignmentTitle: assignmentTitle,
+        teacherUid: teacherUid,
+        docUrl: docUrl,
+      });
+
+      // Add a field in the student document with the name of submittedAssignments which will be an array in which we will push the assignmentId and get the student document where the uid field is equal to studentUid
+      const q = query(collection(db, "users"), where("uid", "==", studentUid));
+      const querySnapshot = await getDocs(q);
+      let studentDocRef = null;
+
+      querySnapshot.forEach((doc) => {
+        studentDocRef = doc.ref;
+      });
+
+      if (!studentDocRef) {
+        throw new Error("Student document not found!");
+      }
+
+      const studentData = await getUserDetailsByUid(studentUid);
+
+      const submittedAssignments = studentData.submittedAssignments || [];
+      submittedAssignments.push(assignmentId);
+      await updateDoc(studentDocRef, {
+        submittedAssignments: submittedAssignments,
+      });
+
+      return {
+        success: true,
+        message: "Assignment added successfully!",
+      };
+    } catch (error) {
+      console.log(error);
+      return {
+        success: false,
+        message: "Error adding assignment!",
+      };
+    }
+  };
+
+  const getStudentSubmissions = async (studentUid) => {
+    try {
+      const q = query(
+        collection(db, "submissions"),
+        where("studentUid", "==", studentUid)
+      );
+      const querySnapshot = await getDocs(q);
+      let submissions = [];
+
+      querySnapshot.forEach((doc) => {
+        submissions.push({ ...doc.data(), id: doc.id });
+      });
+
+      return {
+        success: true,
+        submissions: submissions,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: "Error fetching submissions!",
+      };
+    }
+  };
+
+  const getStudentSubmissionsByTeacherUid = async (teacherUid) => {
+    try {
+      const q = query(
+        collection(db, "submissions"),
+        where("teacherUid", "==", teacherUid)
+      );
+      const querySnapshot = await getDocs(q);
+      let submissions = [];
+
+      querySnapshot.forEach((doc) => {
+        submissions.push({ ...doc.data(), id: doc.id });
+      });
+
+      return {
+        success: true,
+        submissions: submissions,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: "Error fetching submissions!",
+      };
+    }
+  };
+
   return (
     <FirebaseContext.Provider
       value={{
@@ -185,7 +342,12 @@ const FirebaseProvider = ({ children }) => {
         signoutUser,
         addAssignment,
         getAssignments,
+        getAllAssignments,
+        getAssignmentsBySubject,
         deleteAssignment,
+        addSubmission,
+        getStudentSubmissions,
+        getStudentSubmissionsByTeacherUid,
       }}
     >
       {children}

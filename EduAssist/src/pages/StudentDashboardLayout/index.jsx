@@ -17,6 +17,10 @@ import PsychologyIcon from "@mui/icons-material/Psychology";
 import CodeIcon from "@mui/icons-material/Code";
 import CurrencyBitcoinIcon from "@mui/icons-material/CurrencyBitcoin";
 import SensorsIcon from "@mui/icons-material/Sensors";
+import StudentDashboard from "../../components/StudentDashboard";
+import MySubmissions from "../../components/MySubmissions";
+import Communication from "../../components/Communication";
+import Subject from "../../components/Subject";
 
 const CustomAppTitle = () => {
   return (
@@ -89,19 +93,30 @@ const demoTheme = createTheme({
 });
 
 function DemoPageContent({ pathname }) {
-  return (
-    <Box
-      sx={{
-        py: 4,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        textAlign: "center",
-      }}
-    >
-      <Typography>Dashboard content for {pathname}</Typography>
-    </Box>
-  );
+  if (pathname === "/subjects") {
+    pathname = "/subjects/deep-learning";
+  }
+  if (pathname === "/dashboard") {
+    return <StudentDashboard />;
+  }
+  if (pathname === "/my-submissions") {
+    return <MySubmissions />;
+  }
+  if (pathname === "/communication") {
+    return <Communication />;
+  }
+  if (pathname === "/subjects/deep-learning") {
+    return <Subject subjectName="Deep Learning" />;
+  }
+  if (pathname === "/subjects/compiler-design") {
+    return <Subject subjectName="Compiler Design" />;
+  }
+  if (pathname === "/subjects/blockchain-technologies") {
+    return <Subject subjectName="Blockchain Technologies" />;
+  }
+  if (pathname === "/subjects/internet-of-things") {
+    return <Subject subjectName="Internet of Things" />;
+  }
 }
 
 DemoPageContent.propTypes = {

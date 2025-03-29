@@ -6,7 +6,7 @@ const CloudinaryContext = createContext(null);
 const CloudinaryProvider = ({ children }) => {
   const [uploading, setUploading] = useState(false);
 
-  const uploadFile = async (file) => {
+  const uploadFile = async (file, role) => {
     if (!file) {
       alert("Please select a file before uploading.");
       return null;
@@ -16,7 +16,12 @@ const CloudinaryProvider = ({ children }) => {
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "assignment_pdf_upload_preset");
+    formData.append(
+      "upload_preset",
+      role === "teacher"
+        ? "assignment_pdf_upload_preset"
+        : "submission_pdf_upload_preset"
+    );
 
     try {
       const response = await fetch(

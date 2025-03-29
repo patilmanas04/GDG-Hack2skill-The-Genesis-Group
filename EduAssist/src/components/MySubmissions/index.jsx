@@ -1,8 +1,8 @@
 import React, { useContext, useEffect } from "react";
 import {
   CssBaseline,
-  Container,
   Typography,
+  Container,
   List,
   Box,
   Card,
@@ -10,50 +10,28 @@ import {
   CardActions,
   Button,
 } from "@mui/material";
-import { FirebaseContext } from "../../contexts/FirebaseProvider";
 import { UserContext } from "../../contexts/UserProvider";
+import { FirebaseContext } from "../../contexts/FirebaseProvider";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
-const StudentDashboard = () => {
-  const firebaseContext = useContext(FirebaseContext);
-  const { getAllAssignments, getStudentSubmissions } = firebaseContext;
+const MySubmissions = () => {
   const userContext = useContext(UserContext);
-  const {
-    userCredentials,
-    setUploadedAssignments,
-    uploadedAssignments,
-    setStudentSubmissions,
-  } = userContext;
+  const { userCredentials, studentSubmissions, setStudentSubmissions } =
+    userContext;
+  const firebaseContext = useContext(FirebaseContext);
+  const { getStudentSubmissions } = firebaseContext;
 
   useEffect(() => {
-    const fetchSubmissions = async (uploadedAssignments) => {
+    const fetchSubmissions = async () => {
       const response = await getStudentSubmissions(userCredentials.uid);
       if (response.success) {
         setStudentSubmissions(response.submissions);
       } else {
         alert(response.message);
       }
-
-      const filteredAssignments = uploadedAssignments.filter(
-        (assignment) =>
-          !response.submissions.some(
-            (submission) => submission.assignmentId === assignment.id
-          )
-      );
-      setUploadedAssignments(filteredAssignments);
     };
 
-    const fetchAssignments = async () => {
-      const response = await getAllAssignments();
-      if (response.success) {
-        setUploadedAssignments(response.assignments);
-        fetchSubmissions(response.assignments);
-      } else {
-        alert(response.message);
-      }
-    };
-
-    fetchAssignments();
+    fetchSubmissions();
   }, []);
 
   return (
@@ -66,40 +44,33 @@ const StudentDashboard = () => {
           gutterBottom
           sx={{ fontWeight: "bold", marginBottom: 2 }}
         >
-          Pending Assignments
+          Your Submissions
         </Typography>
         <List>
-          {uploadedAssignments.length === 0 ? (
+          {studentSubmissions.length === 0 ? (
             <Typography variant="h6" component="h2" gutterBottom>
-              No pending assignments.
+              No submissions found.
             </Typography>
           ) : (
-            uploadedAssignments.map((assignment, index) => {
+            studentSubmissions.map((submission, index) => {
               return (
                 <Box sx={{ minWidth: 275, marginBottom: 2 }} key={index}>
                   <Card variant="outlined">
                     <CardContent>
                       <Typography variant="h5" component="div">
-                        {assignment.title}
+                        {submission.assignmentTitle}
                       </Typography>
                       <Typography color="text.secondary">
-                        Teacher: {assignment.teacherName}
-                      </Typography>
-                      <Typography color="text.secondary">
-                        Subject: {assignment.subject}
+                        Subject: {submission.subject}
                       </Typography>
                       <Typography color="text.secondary">
                         Uploaded on:{" "}
-                        {new Date(assignment.createdAt).toLocaleDateString()}
-                      </Typography>
-                      <Typography color="text.secondary">
-                        Due date:{" "}
-                        {new Date(assignment.dueDate).toLocaleDateString()}
+                        {new Date(submission.createdAt).toLocaleDateString()}
                       </Typography>
                     </CardContent>
                     <CardActions sx={{ padding: 2, marginTop: -2 }}>
                       <a
-                        href={assignment.docUrl}
+                        href={submission.docUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
@@ -111,7 +82,7 @@ const StudentDashboard = () => {
                           variant="outlined"
                           startIcon={<OpenInNewIcon />}
                         >
-                          View Assignment
+                          View Submission
                         </Button>
                       </a>
                     </CardActions>
@@ -126,4 +97,4 @@ const StudentDashboard = () => {
   );
 };
 
-export default StudentDashboard;
+export default MySubmissions;

@@ -13,6 +13,8 @@ const UserProvider = ({ children }) => {
 
   const [uploadedAssignments, setUploadedAssignments] = useState([]);
 
+  const [studentSubmissions, setStudentSubmissions] = useState([]);
+
   return (
     <UserContext.Provider
       value={{
@@ -20,6 +22,8 @@ const UserProvider = ({ children }) => {
         setUserCredentials,
         setUploadedAssignments,
         uploadedAssignments,
+        studentSubmissions,
+        setStudentSubmissions,
       }}
     >
       {children}
