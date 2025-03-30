@@ -18,7 +18,7 @@ import {
   AccordionActions,
   Avatar,
 } from "@mui/material";
-import { green, pink } from "@mui/material/colors";
+import { red } from "@mui/material/colors";
 import { styled } from "@mui/material/styles";
 import { FirebaseContext } from "../../contexts/FirebaseProvider";
 import { UserContext } from "../../contexts/UserProvider";
@@ -28,6 +28,7 @@ import SendIcon from "@mui/icons-material/Send";
 import { CloudinaryContext } from "../../contexts/CloudinaryContext";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import AssignmentIcon from "@mui/icons-material/Assignment";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
@@ -170,140 +171,6 @@ const Subject = (props) => {
           ) : (
             subjectWiseAssignments.map((assignment, index) => {
               return (
-                // <Box sx={{ minWidth: 275, marginBottom: 2 }} key={index}>
-                //   <Card variant="outlined">
-                //     <CardContent>
-                //       <Typography variant="h5" component="div">
-                //         {assignment.title}
-                //       </Typography>
-                //       <Typography color="text.secondary">
-                //         Teacher: {assignment.teacherName}
-                //       </Typography>
-                // <Typography color="text.secondary">
-                //   Subject: {assignment.subject}
-                // </Typography>
-                // <Typography color="text.secondary">
-                //   Uploaded on:{" "}
-                //   {new Date(assignment.createdAt).toLocaleDateString()}
-                // </Typography>
-                // <Typography color="text.secondary">
-                //   Due date:{" "}
-                //   {new Date(assignment.dueDate).toLocaleDateString()}
-                // </Typography>
-                //     </CardContent>
-                //     <CardActions sx={{ padding: 2, marginTop: -2 }}>
-                // <a
-                //   href={assignment.docUrl}
-                //   target="_blank"
-                //   rel="noopener noreferrer"
-                //   style={{
-                //     color: "inherit",
-                //     textDecoration: "none",
-                //   }}
-                // >
-                //   <Button
-                //     variant="outlined"
-                //     startIcon={<OpenInNewIcon />}
-                //   >
-                //     View Assignment
-                //   </Button>
-                // </a>
-                //       <Button
-                //         variant="contained"
-                //         onClick={() => handleOpen(assignment)}
-                //       >
-                //         Click here to add assignment
-                //       </Button>
-                //       <Modal
-                //         open={open}
-                //         onClose={handleClose}
-                //         aria-labelledby="modal-modal-title"
-                //         aria-describedby="modal-modal-description"
-                //       >
-                //         <Box sx={style}>
-                //           <Typography
-                //             id="modal-modal-title"
-                //             variant="h6"
-                //             component="h2"
-                //           >
-                //             Add New Submission
-                //           </Typography>
-                //           <Box
-                //             component="form"
-                //             sx={{
-                //               mt: 2,
-                //               display: "flex",
-                //               flexDirection: "column",
-                //               gap: 2,
-                //             }}
-                //             noValidate
-                //             autoComplete="off"
-                //             onSubmit={handleSubmit}
-                //           >
-                //             <FormControl>
-                //               <TextField
-                //                 fullWidth
-                //                 label="Subject"
-                //                 id="fullWidth"
-                //                 value={assignment.subject}
-                //                 required
-                //                 disabled
-                //               />
-                //             </FormControl>
-                //             <FormControl>
-                //               <Typography
-                //                 variant="body1"
-                //                 component="h2"
-                //                 gutterBottom
-                //               >
-                //                 Upload Answer File
-                //               </Typography>
-                //               <Button
-                //                 component="label"
-                //                 role={undefined}
-                //                 variant="contained"
-                //                 tabIndex={-1}
-                //                 startIcon={<CloudUploadIcon />}
-                //                 onClick={() => setUploadedFile(null)}
-                //               >
-                //                 Upload files
-                //                 <VisuallyHiddenInput
-                //                   type="file"
-                //                   onChange={(e) => {
-                //                     const file = e.target.files[0];
-                //                     if (file) {
-                //                       setUploadedFile(file);
-                //                     }
-                //                   }}
-                //                   required
-                //                   accept=".pdf"
-                //                 />
-                //               </Button>
-                //               {uploadedFile && (
-                //                 <Typography
-                //                   variant="body2"
-                //                   sx={{ marginTop: 1 }}
-                //                 >
-                //                   Selected file: {uploadedFile.name}
-                //                 </Typography>
-                //               )}
-                //             </FormControl>
-                //             <Button
-                //               type="submit"
-                //               variant="contained"
-                //               sx={{ marginTop: 2 }}
-                //               endIcon={<SendIcon />}
-                //               loading={uploading}
-                //               loadingPosition="end"
-                //             >
-                //               Submit Assignment
-                //             </Button>
-                //           </Box>
-                //         </Box>
-                //       </Modal>
-                //     </CardActions>
-                //   </Card>
-                // </Box>
                 <Accordion sx={{ marginBottom: 2 }} key={index}>
                   <AccordionSummary
                     expandIcon={<ExpandMoreIcon />}
@@ -320,7 +187,7 @@ const Subject = (props) => {
                         justifyContent: "flex-start",
                       }}
                     >
-                      <Avatar sx={{ bgcolor: green[500] }}>
+                      <Avatar sx={{ bgcolor: red[500] }}>
                         <AssignmentIcon />
                       </Avatar>
                       <Box>
@@ -335,30 +202,144 @@ const Subject = (props) => {
                       </Box>
                     </Box>
                   </AccordionSummary>
-                  <AccordionDetails>
-                    <Typography color="text.secondary">
-                      Subject: {assignment.subject}
-                    </Typography>
+                  <AccordionDetails sx={{ marginLeft: 0.5 }}>
                     <Typography color="text.secondary">
                       Due date:{" "}
                       {new Date(assignment.dueDate).toLocaleDateString()}
                     </Typography>
-                  </AccordionDetails>
-                  <AccordionActions>
-                    <a
-                      href={assignment.docUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        color: "inherit",
-                        textDecoration: "none",
-                      }}
+                    <Box>
+                      <Box sx={{ maxWidth: "fit-content", marginTop: 2 }}>
+                        <a
+                          href={assignment.docUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            color: "inherit",
+                            textDecoration: "none",
+                          }}
+                        >
+                          <Card variant="outlined">
+                            <CardContent
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <PictureAsPdfIcon sx={{ fontSize: 30 }} />
+                              <Typography
+                                variant="p"
+                                component="div"
+                                sx={{
+                                  ":hover": {
+                                    textDecoration: "underline",
+                                  },
+                                }}
+                              >
+                                {assignment.title}
+                              </Typography>
+                            </CardContent>
+                          </Card>
+                        </a>
+                      </Box>
+                    </Box>
+                    <Button
+                      variant="contained"
+                      startIcon={<CloudUploadIcon />}
+                      onClick={() => handleOpen(assignment)}
+                      sx={{ marginTop: 2 }}
+                      disabled={new Date(assignment.dueDate) < new Date()}
                     >
-                      <Button variant="outlined" startIcon={<OpenInNewIcon />}>
-                        View Assignment
-                      </Button>
-                    </a>
-                  </AccordionActions>
+                      Submit Assignment
+                    </Button>
+                    <Modal
+                      open={open}
+                      onClose={handleClose}
+                      aria-labelledby="modal-modal-title"
+                      aria-describedby="modal-modal-description"
+                    >
+                      <Box sx={style}>
+                        <Typography
+                          id="modal-modal-title"
+                          variant="h6"
+                          component="h2"
+                        >
+                          Add New Submission
+                        </Typography>
+                        <Box
+                          component="form"
+                          sx={{
+                            mt: 2,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 2,
+                          }}
+                          noValidate
+                          autoComplete="off"
+                          onSubmit={handleSubmit}
+                        >
+                          <FormControl>
+                            <TextField
+                              fullWidth
+                              label="Subject"
+                              id="fullWidth"
+                              value={assignment.subject}
+                              required
+                              disabled
+                            />
+                          </FormControl>
+                          <FormControl>
+                            <Typography
+                              variant="body1"
+                              component="h2"
+                              gutterBottom
+                            >
+                              Upload Answer File
+                            </Typography>
+                            <Button
+                              component="label"
+                              role={undefined}
+                              variant="contained"
+                              tabIndex={-1}
+                              startIcon={<CloudUploadIcon />}
+                              onClick={() => setUploadedFile(null)}
+                            >
+                              Upload files
+                              <VisuallyHiddenInput
+                                type="file"
+                                onChange={(e) => {
+                                  const file = e.target.files[0];
+                                  if (file) {
+                                    setUploadedFile(file);
+                                  }
+                                }}
+                                required
+                                accept=".pdf"
+                              />
+                            </Button>
+                            {uploadedFile && (
+                              <Typography variant="body2" sx={{ marginTop: 1 }}>
+                                Selected file: {uploadedFile.name}
+                              </Typography>
+                            )}
+                          </FormControl>
+                          <Button
+                            type="submit"
+                            variant="contained"
+                            sx={{ marginTop: 2 }}
+                            endIcon={<SendIcon />}
+                            loading={uploading}
+                            loadingPosition="end"
+                          >
+                            Submit Assignment
+                          </Button>
+                        </Box>
+                      </Box>
+                    </Modal>
+                  </AccordionDetails>
                 </Accordion>
               );
             })

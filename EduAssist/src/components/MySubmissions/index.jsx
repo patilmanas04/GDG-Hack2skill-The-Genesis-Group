@@ -9,10 +9,19 @@ import {
   CardContent,
   CardActions,
   Button,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  AccordionActions,
+  Avatar,
 } from "@mui/material";
+import { green } from "@mui/material/colors";
 import { UserContext } from "../../contexts/UserProvider";
 import { FirebaseContext } from "../../contexts/FirebaseProvider";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 
 const MySubmissions = () => {
   const userContext = useContext(UserContext);
@@ -54,21 +63,41 @@ const MySubmissions = () => {
           ) : (
             studentSubmissions.map((submission, index) => {
               return (
-                <Box sx={{ minWidth: 275, marginBottom: 2 }} key={index}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography variant="h5" component="div">
-                        {submission.assignmentTitle}
-                      </Typography>
-                      <Typography color="text.secondary">
-                        Subject: {submission.subject}
-                      </Typography>
-                      <Typography color="text.secondary">
-                        Uploaded on:{" "}
-                        {new Date(submission.createdAt).toLocaleDateString()}
-                      </Typography>
-                    </CardContent>
-                    <CardActions sx={{ padding: 2, marginTop: -2 }}>
+                <Accordion sx={{ marginBottom: 2 }} key={index}>
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="panel1-content"
+                    id="panel1-header"
+                  >
+                    <Box
+                      sx={{
+                        width: "100%",
+                        padding: 0,
+                        display: "flex",
+                        gap: 2,
+                        alignItems: "center",
+                        justifyContent: "flex-start",
+                      }}
+                    >
+                      <Avatar sx={{ bgcolor: green[500] }}>
+                        <AssignmentIcon />
+                      </Avatar>
+                      <Box>
+                        <Typography component="span">
+                          Assignment Submitted: {submission.assignmentTitle}
+                        </Typography>
+                        <Typography color="text.secondary">
+                          Submitted on:{" "}
+                          {new Date(submission.createdAt).toLocaleDateString()}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </AccordionSummary>
+                  <AccordionDetails sx={{ marginLeft: 0.5 }}>
+                    <Typography color="text.secondary">
+                      Subject: {submission.subject}
+                    </Typography>
+                    <Box sx={{ maxWidth: "fit-content", marginTop: 2 }}>
                       <a
                         href={submission.docUrl}
                         target="_blank"
@@ -78,16 +107,50 @@ const MySubmissions = () => {
                           textDecoration: "none",
                         }}
                       >
-                        <Button
-                          variant="outlined"
-                          startIcon={<OpenInNewIcon />}
-                        >
-                          View Submission
-                        </Button>
+                        <Card variant="outlined">
+                          <CardContent
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <PictureAsPdfIcon sx={{ fontSize: 30 }} />
+                            <Typography
+                              variant="p"
+                              component="div"
+                              sx={{
+                                ":hover": {
+                                  textDecoration: "underline",
+                                },
+                              }}
+                            >
+                              {submission.assignmentTitle}
+                            </Typography>
+                          </CardContent>
+                        </Card>
                       </a>
-                    </CardActions>
-                  </Card>
-                </Box>
+                    </Box>
+                  </AccordionDetails>
+                  {/* <AccordionActions>
+                    <a
+                      href={submission.docUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        color: "inherit",
+                        textDecoration: "none",
+                      }}
+                    >
+                      <Button variant="outlined" startIcon={<OpenInNewIcon />}>
+                        View Assignment
+                      </Button>
+                    </a>
+                  </AccordionActions> */}
+                </Accordion>
               );
             })
           )}
