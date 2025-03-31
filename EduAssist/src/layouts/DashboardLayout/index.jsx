@@ -5,6 +5,8 @@ import StudentDashboard from "../../pages/StudentDashboardLayout";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router";
 import { FirebaseContext } from "../../contexts/FirebaseProvider";
+import CircularProgress from "@mui/material/CircularProgress";
+import Box from "@mui/material/Box";
 
 const auth = getAuth();
 
@@ -36,8 +38,19 @@ const DashboardLayout = () => {
 
   return userCredentials.role === "teacher" ? (
     <TeacherDashboard userCredentials={userCredentials} />
-  ) : (
+  ) : userCredentials.role === "student" ? (
     <StudentDashboard userCredentials={userCredentials} />
+  ) : (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100vh",
+      }}
+    >
+      <CircularProgress />
+    </Box>
   );
 };
 

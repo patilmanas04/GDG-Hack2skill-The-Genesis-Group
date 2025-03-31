@@ -125,7 +125,8 @@ const Subject = (props) => {
       currentAssignment.id,
       currentAssignment.title,
       currentAssignment.teacherUid,
-      pdfUrl
+      pdfUrl,
+      currentAssignment.docUrl
     );
 
     if (!result.success) {
@@ -144,6 +145,7 @@ const Subject = (props) => {
         assignmentTitle: currentAssignment.title,
         teacherId: currentAssignment.teacherUid,
         docUrl: pdfUrl,
+        answersDocUrl: currentAssignment.docUrl,
       },
     ]);
 
@@ -223,10 +225,8 @@ const Subject = (props) => {
                               sx={{
                                 display: "flex",
                                 alignItems: "center",
-                                gap: 1,
-                                display: "flex",
-                                alignItems: "center",
                                 justifyContent: "center",
+                                gap: 1,
                               }}
                             >
                               <PictureAsPdfIcon sx={{ fontSize: 30 }} />

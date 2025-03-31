@@ -112,10 +112,8 @@ const MySubmissions = () => {
                             sx={{
                               display: "flex",
                               alignItems: "center",
-                              gap: 1,
-                              display: "flex",
-                              alignItems: "center",
                               justifyContent: "center",
+                              gap: 1,
                             }}
                           >
                             <PictureAsPdfIcon sx={{ fontSize: 30 }} />

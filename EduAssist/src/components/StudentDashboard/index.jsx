@@ -30,6 +30,10 @@ import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import { CloudinaryContext } from "../../contexts/CloudinaryContext";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import SendIcon from "@mui/icons-material/Send";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { useNavigate } from "react-router";
+
+const auth = getAuth();
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
@@ -57,11 +61,16 @@ const style = {
 
 const StudentDashboard = () => {
   const firebaseContext = useContext(FirebaseContext);
-  const { getAllAssignments, getStudentSubmissions, addSubmission } =
-    firebaseContext;
+  const {
+    getUserDetailsByUid,
+    getAllAssignments,
+    getStudentSubmissions,
+    addSubmission,
+  } = firebaseContext;
   const userContext = useContext(UserContext);
   const {
     userCredentials,
+    setUserCredentials,
     setUploadedAssignments,
     uploadedAssignments,
     studentSubmissions,
@@ -69,6 +78,8 @@ const StudentDashboard = () => {
   } = userContext;
   const cloudinaryContext = useContext(CloudinaryContext);
   const { uploadFile, uploading } = cloudinaryContext;
+
+  const navigate = useNavigate();
 
   const [currentAssignment, setCurrentAssignment] = useState({});
   const [open, setOpen] = useState(false);
@@ -81,8 +92,8 @@ const StudentDashboard = () => {
   const handleClose = () => setOpen(false);
 
   useEffect(() => {
-    const fetchSubmissions = async (uploadedAssignments) => {
-      const response = await getStudentSubmissions(userCredentials.uid);
+    const fetchSubmissions = async (uploadedAssignments, studentUid) => {
+      const response = await getStudentSubmissions(studentUid);
       if (response.success) {
         setStudentSubmissions(response.submissions);
       } else {
@@ -95,20 +106,37 @@ const StudentDashboard = () => {
             (submission) => submission.assignmentId === assignment.id
           )
       );
+
       setUploadedAssignments(filteredAssignments);
     };
 
-    const fetchAssignments = async () => {
+    const fetchAssignments = async (studentUid) => {
       const response = await getAllAssignments();
       if (response.success) {
-        setUploadedAssignments(response.assignments);
-        fetchSubmissions(response.assignments);
+        fetchSubmissions(response.assignments, studentUid);
       } else {
         alert(response.message);
       }
     };
 
-    fetchAssignments();
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const uid = user.uid;
+        const userDetails = await getUserDetailsByUid(uid);
+
+        fetchAssignments(userDetails.uid);
+
+        setUserCredentials({
+          name: userDetails.name,
+          email: userDetails.email,
+          photo: userDetails.photo,
+          role: userDetails.role,
+          uid: userDetails.uid,
+        });
+      } else {
+        navigate("/signin");
+      }
+    });
   }, []);
 
   const handleSubmit = async (e) => {
@@ -132,7 +160,8 @@ const StudentDashboard = () => {
       currentAssignment.id,
       currentAssignment.title,
       currentAssignment.teacherUid,
-      pdfUrl
+      pdfUrl,
+      currentAssignment.answersDocUrl
     );
 
     if (!result.success) {
@@ -151,13 +180,12 @@ const StudentDashboard = () => {
         assignmentTitle: currentAssignment.title,
         teacherId: currentAssignment.teacherUid,
         docUrl: pdfUrl,
+        answersDocUrl: currentAssignment.answersDocUrl,
       },
     ]);
 
     const response = await getAllAssignments();
     if (response.success) {
-      setUploadedAssignments(response.assignments);
-
       const anotherResponse = await getStudentSubmissions(userCredentials.uid);
       if (response.success) {
         setStudentSubmissions(anotherResponse.submissions);

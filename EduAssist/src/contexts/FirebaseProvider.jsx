@@ -114,7 +114,9 @@ const FirebaseProvider = ({ children }) => {
     teacherUid,
     teacherName,
     docUrl,
-    pdfPublicId
+    answersDocUrl,
+    pdfPublicId,
+    answersPdfPublicId
   ) => {
     try {
       const docRef = await addDoc(collection(db, "assignments"), {
@@ -125,7 +127,9 @@ const FirebaseProvider = ({ children }) => {
         teacherUid: teacherUid,
         teacherName: teacherName,
         docUrl: docUrl,
+        answersDocUrl: answersDocUrl,
         pdfPublicId: pdfPublicId,
+        answersPdfPublicId: answersPdfPublicId,
       });
 
       return {
@@ -214,7 +218,9 @@ const FirebaseProvider = ({ children }) => {
 
   const deleteAssignment = async (assignmentId) => {
     try {
-      await deleteDoc(doc(db, "assignments", assignmentId));
+      const docRef = doc(db, "assignments", assignmentId);
+      await deleteDoc(docRef);
+
       return {
         success: true,
         message: "Assignment deleted successfully!",
@@ -235,7 +241,8 @@ const FirebaseProvider = ({ children }) => {
     assignmentId,
     assignmentTitle,
     teacherUid,
-    docUrl
+    docUrl,
+    answersDocUrl
   ) => {
     try {
       const docRef = await addDoc(collection(db, "submissions"), {
@@ -247,6 +254,7 @@ const FirebaseProvider = ({ children }) => {
         assignmentTitle: assignmentTitle,
         teacherUid: teacherUid,
         docUrl: docUrl,
+        answersDocUrl: answersDocUrl,
       });
 
       // Add a field in the student document with the name of submittedAssignments which will be an array in which we will push the assignmentId and get the student document where the uid field is equal to studentUid

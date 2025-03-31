@@ -60,13 +60,15 @@ const style = {
 
 const TeacherDashboard = () => {
   const cloudinaryContext = React.useContext(CloudinaryContext);
-  const { uploadFile, uploading, deleteFile } = cloudinaryContext;
+  const { uploadFile, uploadAnswersFile, deleteFile } = cloudinaryContext;
   const firebaseContext = useContext(FirebaseContext);
   const { addAssignment, getAssignments, deleteAssignment } = firebaseContext;
   const userContext = useContext(UserContext);
   const { userCredentials, setUploadedAssignments, uploadedAssignments } =
     userContext;
 
+  const [uploading, setUploading] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -74,6 +76,7 @@ const TeacherDashboard = () => {
   const [subject, setSubject] = React.useState("");
   const [dueDate, setDueDate] = React.useState(null);
   const [uploadedFile, setUploadedFile] = React.useState(null);
+  const [uploadedAnswersFile, setUploadedAnswersFile] = React.useState(null);
 
   const [openDialog, setOpenDialog] = React.useState(false);
 
@@ -85,10 +88,20 @@ const TeacherDashboard = () => {
     setOpenDialog(false);
   };
 
-  const handleDelete = async (assignmentId, pdfPublicId) => {
+  const handleDelete = async (
+    assignmentId,
+    pdfPublicId,
+    answersPdfPublicId
+  ) => {
     const deleteResult = await deleteFile(pdfPublicId);
     if (!deleteResult.success) {
       alert("Error deleting file. Please try again.");
+      return;
+    }
+
+    const deleteAnswersResult = await deleteFile(answersPdfPublicId);
+    if (!deleteAnswersResult.success) {
+      alert("Error deleting answers file. Please try again.");
       return;
     }
 
@@ -129,14 +142,36 @@ const TeacherDashboard = () => {
       alert("Please upload a file for the assignment.");
       return;
     }
+    if (!dueDate) {
+      alert("Please select a due date for the assignment.");
+      return;
+    }
+    if (!uploadedAnswersFile) {
+      alert("Please upload answers for the assignment.");
+      return;
+    }
+
+    setUploading(true);
 
     setTitle("");
     setSubject("");
+    setDueDate(null);
     setUploadedFile(null);
+    setUploadedAnswersFile(null);
 
     const { pdfUrl, pdfPublicId } = await uploadFile(uploadedFile, "teacher");
     if (!pdfUrl) {
+      setUploading(false);
       alert("File upload failed. Please try again.");
+      return;
+    }
+
+    const { answersPdfUrl, answersPdfPublicId } = await uploadAnswersFile(
+      uploadedAnswersFile
+    );
+    if (!answersPdfUrl) {
+      setUploading(false);
+      alert("Answers file upload failed. Please try again.");
       return;
     }
 
@@ -147,10 +182,13 @@ const TeacherDashboard = () => {
       userCredentials.uid,
       userCredentials.name,
       pdfUrl,
-      pdfPublicId
+      answersPdfUrl,
+      pdfPublicId,
+      answersPdfPublicId
     );
 
     if (!result.success) {
+      setUploading(false);
       alert("Error adding assignment. Please try again.");
       return;
     }
@@ -158,6 +196,7 @@ const TeacherDashboard = () => {
     setUploadedAssignments((prevAssignments) => [
       ...prevAssignments,
       {
+        id: result.id,
         createdAt: new Date(),
         title: title,
         subject: subject,
@@ -165,9 +204,15 @@ const TeacherDashboard = () => {
         teacherUid: userCredentials.uid,
         teacherName: userCredentials.name,
         docUrl: pdfUrl,
+        answersDocUrl: answersPdfUrl,
         pdfPublicId: pdfPublicId,
+        answersPdfPublicId: answersPdfPublicId,
       },
     ]);
+
+    console.log(uploadedAssignments);
+
+    setUploading(false);
 
     handleClose();
   };
@@ -251,7 +296,7 @@ const TeacherDashboard = () => {
               </FormControl>
               <FormControl>
                 <Typography variant="body1" component="h2" gutterBottom>
-                  Upload Assignment Files
+                  Upload Assignment File
                 </Typography>
                 <Button
                   component="label"
@@ -280,7 +325,37 @@ const TeacherDashboard = () => {
                   </Typography>
                 )}
               </FormControl>
-              {uploading}
+              <FormControl>
+                <Typography variant="body1" component="h2" gutterBottom>
+                  Upload Assignment Answers
+                </Typography>
+                <Button
+                  component="label"
+                  role={undefined}
+                  variant="contained"
+                  tabIndex={-1}
+                  startIcon={<CloudUploadIcon />}
+                  onClick={() => setUploadedAnswersFile(null)}
+                >
+                  Upload files
+                  <VisuallyHiddenInput
+                    type="file"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setUploadedAnswersFile(file);
+                      }
+                    }}
+                    required
+                    accept=".pdf"
+                  />
+                </Button>
+                {uploadedAnswersFile && (
+                  <Typography variant="body2" sx={{ marginTop: 1 }}>
+                    Selected file: {uploadedAnswersFile.name}
+                  </Typography>
+                )}
+              </FormControl>
               <Button
                 type="submit"
                 variant="contained"
@@ -342,6 +417,19 @@ const TeacherDashboard = () => {
                         View Assignment
                       </Button>
                     </a>
+                    <a
+                      href={assignment.answersDocUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        color: "inherit",
+                        textDecoration: "none",
+                      }}
+                    >
+                      <Button variant="outlined" startIcon={<OpenInNewIcon />}>
+                        View Answers
+                      </Button>
+                    </a>
                     <Button
                       variant="contained"
                       onClick={handleClickOpen}
@@ -367,9 +455,13 @@ const TeacherDashboard = () => {
                       <DialogActions>
                         <Button onClick={handleCloseDialog}>Cancel</Button>
                         <Button
-                          onClick={() =>
-                            handleDelete(assignment.id, assignment.pdfPublicId)
-                          }
+                          onClick={() => {
+                            handleDelete(
+                              assignment.id,
+                              assignment.pdfPublicId,
+                              assignment.answersPdfPublicId
+                            );
+                          }}
                           autoFocus
                         >
                           Delete

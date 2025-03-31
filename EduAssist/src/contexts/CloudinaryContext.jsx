@@ -46,6 +46,44 @@ const CloudinaryProvider = ({ children }) => {
     }
   };
 
+  const uploadAnswersFile = async (file) => {
+    if (!file) {
+      alert("Please select a file before uploading.");
+      return null;
+    }
+
+    setUploading(true);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "assignment_answers_pdf_upload_preset");
+
+    try {
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${
+          import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+        }/raw/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      return {
+        answersPdfUrl: data.secure_url,
+        answersPdfPublicId: data.public_id,
+      };
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      alert("File upload failed. Try again.");
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const deleteFile = async (pdfPublicId) => {
     try {
       const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
@@ -85,7 +123,9 @@ const CloudinaryProvider = ({ children }) => {
   };
 
   return (
-    <CloudinaryContext.Provider value={{ uploadFile, uploading, deleteFile }}>
+    <CloudinaryContext.Provider
+      value={{ uploadFile, uploadAnswersFile, uploading, deleteFile }}
+    >
       {children}
     </CloudinaryContext.Provider>
   );

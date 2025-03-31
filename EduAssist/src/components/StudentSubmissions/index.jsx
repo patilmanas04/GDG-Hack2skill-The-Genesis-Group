@@ -21,6 +21,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { useTheme } from "@mui/material/styles";
 
 const columnHelper = createMRTColumnHelper();
 
@@ -64,6 +65,8 @@ const columns = [
 ];
 
 const StudentSubmissions = () => {
+  const theme = useTheme();
+
   const userContext = useContext(UserContext);
   const { userCredentials, studentSubmissions, setStudentSubmissions } =
     userContext;
@@ -152,56 +155,18 @@ const StudentSubmissions = () => {
         >
           Student's Submissions
         </Typography>
-        {/* <List>
-          {studentSubmissions.length === 0 ? (
-            <Typography variant="h6" component="h2" gutterBottom>
-              No submissions found.
-            </Typography>
-          ) : (
-            studentSubmissions.map((submission, index) => {
-              return (
-                <Box sx={{ minWidth: 275, marginBottom: 2 }} key={index}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography variant="h5" component="div">
-                        {submission.assignmentTitle}
-                      </Typography>
-                      <Typography color="text.secondary">
-                        Submitted by: {submission.studentName}
-                      </Typography>
-                      <Typography color="text.secondary">
-                        Subject: {submission.subject}
-                      </Typography>
-                      <Typography color="text.secondary">
-                        Submitted on:{" "}
-                        {new Date(submission.createdAt).toLocaleDateString()}
-                      </Typography>
-                    </CardContent>
-                    <CardActions sx={{ padding: 2, marginTop: -2 }}>
-                      <a
-                        href={submission.docUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          color: "inherit",
-                          textDecoration: "none",
-                        }}
-                      >
-                        <Button
-                          variant="outlined"
-                          startIcon={<OpenInNewIcon />}
-                        >
-                          View Submission
-                        </Button>
-                      </a>
-                    </CardActions>
-                  </Card>
-                </Box>
-              );
-            })
-          )}
-        </List> */}
-        <MaterialReactTable table={table} />
+        <MaterialReactTable
+          table={table}
+          muiTableContainerProps={{
+            style: {
+              backgroundColor:
+                theme.palette.mode === "dark"
+                  ? "#121212" // Dark mode color
+                  : "#ffffff", // Light mode color
+              transition: "background-color 0.3s ease-in-out",
+            },
+          }}
+        />
       </Container>
     </>
   );
