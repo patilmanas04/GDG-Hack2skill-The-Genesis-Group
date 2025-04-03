@@ -35,6 +35,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import SnackbarMessage from "../SnackbarMessage";
 import BackdropLoader from "../BackdropLoader";
+import dateFormatter from "../../utils/DateFormatter";
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
@@ -420,11 +421,10 @@ const TeacherDashboard = () => {
                     </Typography>
                     <Typography color="text.secondary">
                       Uploaded on:{" "}
-                      {new Date(assignment.createdAt).toLocaleDateString()}
+                      {dateFormatter(new Date(assignment.createdAt))}
                     </Typography>
                     <Typography color="text.secondary">
-                      Due date:{" "}
-                      {new Date(assignment.dueDate).toLocaleDateString()}
+                      Due date: {dateFormatter(new Date(assignment.dueDate))}
                     </Typography>
                   </CardContent>
                   <CardActions
