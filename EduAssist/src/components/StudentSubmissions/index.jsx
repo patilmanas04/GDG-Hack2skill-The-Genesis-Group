@@ -22,28 +22,39 @@ import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useTheme } from "@mui/material/styles";
+import { DataGrid, GridToolbar } from "@mui/x-data-grid";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Switch from "@mui/material/Switch";
 
-const columnHelper = createMRTColumnHelper();
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
 
 const columns = [
-  columnHelper.accessor("subject", {
-    header: "Subject",
-  }),
-  columnHelper.accessor("assignmentTitle", {
-    header: "Assignment Title",
-  }),
-  columnHelper.accessor("studentName", {
-    header: "Submitted by",
-  }),
-  columnHelper.accessor("createdAt", {
-    header: "Submitted on",
-  }),
-  columnHelper.accessor("docUrl", {
-    header: "Submission",
-    Cell: ({ cell }) => {
+  { field: "Subject", width: 200 },
+  {
+    field: "Submitted on",
+    type: "date",
+    width: 200,
+    valueFormatter: (value) => dateFormatter.format(value),
+  },
+  {
+    field: "Title",
+    width: 200,
+  },
+  {
+    field: "Submitted by",
+    width: 200,
+  },
+  {
+    field: "Submission",
+    width: 220,
+    renderCell: (params) => {
       return (
         <a
-          href={cell.getValue()}
+          href={params.row.docUrl}
           target="_blank"
           rel="noopener noreferrer"
           style={{
@@ -51,21 +62,22 @@ const columns = [
             textDecoration: "none",
           }}
         >
-          <Button
-            variant="outlined"
-            startIcon={<OpenInNewIcon />}
-            sx={{ width: 200 }}
-          >
-            View Submission
+          <Button variant="outlined" startIcon={<OpenInNewIcon />}>
+            View Assignment
           </Button>
         </a>
       );
     },
-  }),
+  },
 ];
 
 const StudentSubmissions = () => {
-  const theme = useTheme();
+  const [filterModel, setFilterModel] = React.useState({
+    items: [],
+    quickFilterValues: [],
+  });
+  const [ignoreDiacritics, setIgnoreDiacritics] = React.useState(true);
+  const [rows, setRows] = React.useState([]);
 
   const userContext = useContext(UserContext);
   const { userCredentials, studentSubmissions, setStudentSubmissions } =
@@ -79,7 +91,21 @@ const StudentSubmissions = () => {
         userContext.userCredentials.uid
       );
       if (response.success) {
+        console.log(response.submissions);
         setStudentSubmissions(response.submissions);
+
+        const formattedRows = response.submissions.map((submission, index) => {
+          return {
+            id: index,
+            Subject: submission.subject,
+            "Submitted on": new Date(submission.createdAt),
+            Title: submission.assignmentTitle,
+            "Submitted by": submission.studentName,
+            docUrl: submission.docUrl,
+          };
+        });
+
+        setRows(formattedRows);
       } else {
         alert(response.message);
       }
@@ -87,61 +113,6 @@ const StudentSubmissions = () => {
 
     fetchSubmissions();
   }, []);
-
-  const handleExportRows = (rows) => {
-    const doc = new jsPDF();
-    const data = rows.map((row) => {
-      return {
-        Subject: row.getValue("subject"),
-        "Assignment Title": row.getValue("assignmentTitle"),
-        "Submitted by": row.getValue("studentName"),
-        "Submitted on": new Date(
-          row.getValue("createdAt")
-        ).toLocaleDateString(),
-      };
-    });
-
-    autoTable(doc, {
-      head: [["Subject", "Assignment Title", "Submitted by", "Submitted on"]],
-      body: data.map((row) => [
-        row["Subject"],
-        row["Assignment Title"],
-        row["Submitted by"],
-        row["Submitted on"],
-      ]),
-    });
-
-    doc.save("student_submissions.pdf");
-  };
-
-  const table = useMaterialReactTable({
-    columns,
-    data: studentSubmissions,
-    columnFilterDisplayMode: "popover",
-    paginationDisplayMode: "pages",
-    positionToolbarAlertBanner: "bottom",
-    renderTopToolbarCustomActions: ({ table }) => (
-      <Box
-        sx={{
-          display: "flex",
-          gap: "16px",
-          padding: "8px",
-          flexWrap: "wrap",
-        }}
-      >
-        <Button
-          disabled={table.getPrePaginationRowModel().rows.length === 0}
-          //export all rows, including from the next page, (still respects filtering and sorting)
-          onClick={() =>
-            handleExportRows(table.getPrePaginationRowModel().rows)
-          }
-          startIcon={<FileDownloadIcon />}
-        >
-          Export All Rows
-        </Button>
-      </Box>
-    ),
-  });
 
   return (
     <>
@@ -155,18 +126,27 @@ const StudentSubmissions = () => {
         >
           Student's Submissions
         </Typography>
-        <MaterialReactTable
-          table={table}
-          muiTableContainerProps={{
-            style: {
-              backgroundColor:
-                theme.palette.mode === "dark"
-                  ? "#121212" // Dark mode color
-                  : "#ffffff", // Light mode color
-              transition: "background-color 0.3s ease-in-out",
-            },
-          }}
-        />
+
+        <div style={{ width: "100%" }}>
+          <div style={{ width: "100%" }}>
+            <DataGrid
+              rows={rows}
+              columns={columns}
+              filterModel={filterModel}
+              onFilterModelChange={setFilterModel}
+              slots={{ toolbar: GridToolbar }}
+              slotProps={{ toolbar: { showQuickFilter: true } }}
+              sx={{
+                "& .MuiDataGrid-columnHeaders": {
+                  borderBottom: "1px solid rgba(224, 224, 224, 1)",
+                },
+                "& .MuiDataGrid-cell": {
+                  borderRight: "1px solid rgba(224, 224, 224, 1)",
+                },
+              }}
+            />
+          </div>
+        </div>
       </Container>
     </>
   );

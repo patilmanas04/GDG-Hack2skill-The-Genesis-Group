@@ -403,7 +403,16 @@ const TeacherDashboard = () => {
                       {new Date(assignment.dueDate).toLocaleDateString()}
                     </Typography>
                   </CardContent>
-                  <CardActions sx={{ padding: 2, marginTop: -2 }}>
+                  <CardActions
+                    sx={{
+                      padding: 2,
+                      marginTop: -2,
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 1,
+                      alignItems: "start",
+                    }}
+                  >
                     <a
                       href={assignment.docUrl}
                       target="_blank"
@@ -411,6 +420,7 @@ const TeacherDashboard = () => {
                       style={{
                         color: "inherit",
                         textDecoration: "none",
+                        margin: 0,
                       }}
                     >
                       <Button variant="outlined" startIcon={<OpenInNewIcon />}>
@@ -424,6 +434,7 @@ const TeacherDashboard = () => {
                       style={{
                         color: "inherit",
                         textDecoration: "none",
+                        margin: 0,
                       }}
                     >
                       <Button variant="outlined" startIcon={<OpenInNewIcon />}>
@@ -434,6 +445,7 @@ const TeacherDashboard = () => {
                       variant="contained"
                       onClick={handleClickOpen}
                       endIcon={<DeleteIcon />}
+                      sx={{ margin: 0 + " !important" }}
                     >
                       Delete
                     </Button>
@@ -444,12 +456,11 @@ const TeacherDashboard = () => {
                       aria-describedby="alert-dialog-description"
                     >
                       <DialogTitle id="alert-dialog-title">
-                        Do you want to delete this assignment?
+                        {"Delete Assignment"}
                       </DialogTitle>
                       <DialogContent>
                         <DialogContentText id="alert-dialog-description">
-                          Are you sure you want to delete this assignment? This
-                          action cannot be undone.
+                          Are you sure you want to delete this assignment?
                         </DialogContentText>
                       </DialogContent>
                       <DialogActions>
