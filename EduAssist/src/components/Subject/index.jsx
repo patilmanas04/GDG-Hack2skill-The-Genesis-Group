@@ -31,6 +31,7 @@ import AssignmentIcon from "@mui/icons-material/Assignment";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import SnackbarMessage from "../SnackbarMessage";
 import dateFormatter from "../../utils/DateFormatter";
+import Alert from "@mui/material/Alert";
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
@@ -273,12 +274,18 @@ const Subject = (props) => {
                       onClick={() => handleOpen(assignment)}
                       sx={{ marginTop: 2 }}
                       disabled={
-                        new Date().getDate() >
-                        new Date(assignment.dueDate).getDate()
+                        new Date().setHours(0, 0, 0, 0) >
+                        new Date(assignment.dueDate).setHours(0, 0, 0, 0)
                       }
                     >
                       Submit Assignment
                     </Button>
+                    {new Date().setHours(0, 0, 0, 0) >
+                      new Date(assignment.dueDate).setHours(0, 0, 0, 0) && (
+                      <Alert severity="error" sx={{ marginTop: 2 }}>
+                        This assignment is overdue.
+                      </Alert>
+                    )}
                     <Modal
                       open={open}
                       onClose={handleClose}

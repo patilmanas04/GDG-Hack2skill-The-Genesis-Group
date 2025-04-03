@@ -34,6 +34,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router";
 import SnackbarMessage from "../SnackbarMessage";
 import dateFormatter from "../../utils/DateFormatter";
+import Alert from "@mui/material/Alert";
 
 const auth = getAuth();
 
@@ -320,12 +321,18 @@ const StudentDashboard = () => {
                       onClick={() => handleOpen(assignment)}
                       sx={{ marginTop: 2 }}
                       disabled={
-                        new Date().getDate() >
-                        new Date(assignment.dueDate).getDate()
+                        new Date().setHours(0, 0, 0, 0) >
+                        new Date(assignment.dueDate).setHours(0, 0, 0, 0)
                       }
                     >
                       Submit Assignment
                     </Button>
+                    {new Date().setHours(0, 0, 0, 0) >
+                      new Date(assignment.dueDate).setHours(0, 0, 0, 0) && (
+                      <Alert severity="error" sx={{ marginTop: 2 }}>
+                        This assignment is overdue.
+                      </Alert>
+                    )}
                     <Modal
                       open={open}
                       onClose={handleClose}
