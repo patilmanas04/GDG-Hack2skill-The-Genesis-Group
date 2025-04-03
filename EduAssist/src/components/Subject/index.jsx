@@ -29,6 +29,8 @@ import { CloudinaryContext } from "../../contexts/CloudinaryContext";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import SnackbarMessage from "../SnackbarMessage";
+import dateFormatter from "../../utils/DateFormatter";
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
@@ -73,6 +75,12 @@ const Subject = (props) => {
   const [open, setOpen] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
 
+  const [openAlert, setOpenAlert] = useState(false);
+  const [alert, setAlert] = useState({
+    type: "",
+    message: "",
+  });
+
   const handleOpen = (assignment) => {
     setCurrentAssignment(assignment);
     setOpen(true);
@@ -108,13 +116,21 @@ const Subject = (props) => {
     e.preventDefault();
 
     if (!uploadedFile) {
-      alert("Please upload a file for the assignment.");
+      setAlert({
+        type: "error",
+        message: "Please upload a file before submitting.",
+      });
+      setOpenAlert(true);
       return;
     }
 
     const { pdfUrl } = await uploadFile(uploadedFile, "student");
     if (!pdfUrl) {
-      alert("File upload failed. Please try again.");
+      setAlert({
+        type: "error",
+        message: "Error uploading file. Please try again.",
+      });
+      setOpenAlert(true);
       return;
     }
 
@@ -151,6 +167,12 @@ const Subject = (props) => {
 
     handleClose();
     setUploadedFile(null);
+
+    setAlert({
+      type: "success",
+      message: "Assignment submitted successfully!",
+    });
+    setOpenAlert(true);
   };
 
   return (
@@ -199,15 +221,14 @@ const Subject = (props) => {
                         </Typography>
                         <Typography color="text.secondary">
                           Posted on:{" "}
-                          {new Date(assignment.createdAt).toLocaleDateString()}
+                          {dateFormatter(new Date(assignment.createdAt))}
                         </Typography>
                       </Box>
                     </Box>
                   </AccordionSummary>
                   <AccordionDetails sx={{ marginLeft: 0.5 }}>
                     <Typography color="text.secondary">
-                      Due date:{" "}
-                      {new Date(assignment.dueDate).toLocaleDateString()}
+                      Due date: {dateFormatter(new Date(assignment.dueDate))}
                     </Typography>
                     <Box>
                       <Box sx={{ maxWidth: "fit-content", marginTop: 2 }}>
@@ -251,7 +272,10 @@ const Subject = (props) => {
                       startIcon={<CloudUploadIcon />}
                       onClick={() => handleOpen(assignment)}
                       sx={{ marginTop: 2 }}
-                      disabled={new Date(assignment.dueDate) < new Date()}
+                      disabled={
+                        new Date().getDate() >
+                        new Date(assignment.dueDate).getDate()
+                      }
                     >
                       Submit Assignment
                     </Button>
@@ -345,6 +369,12 @@ const Subject = (props) => {
             })
           )}
         </List>
+        <SnackbarMessage
+          type={alert.type}
+          message={alert.message}
+          openAlert={openAlert}
+          setOpenAlert={setOpenAlert}
+        />
       </Container>
     </>
   );

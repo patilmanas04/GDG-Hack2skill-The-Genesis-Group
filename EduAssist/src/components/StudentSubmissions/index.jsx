@@ -127,8 +127,8 @@ const StudentSubmissions = () => {
           Student's Submissions
         </Typography>
 
-        <div style={{ width: "100%" }}>
-          <div style={{ width: "100%" }}>
+        <div style={{ width: "100%", height: "fit-content" }}>
+          <div style={{ width: "100%", height: "fit-content" }}>
             <DataGrid
               rows={rows}
               columns={columns}

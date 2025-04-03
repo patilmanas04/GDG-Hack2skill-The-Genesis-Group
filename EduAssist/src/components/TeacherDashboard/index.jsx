@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Typography,
   CssBaseline,
@@ -33,6 +33,8 @@ import { FirebaseContext } from "../../contexts/FirebaseProvider";
 import { UserContext } from "../../contexts/UserProvider";
 import DeleteIcon from "@mui/icons-material/Delete";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import SnackbarMessage from "../SnackbarMessage";
+import BackdropLoader from "../BackdropLoader";
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
@@ -80,6 +82,13 @@ const TeacherDashboard = () => {
 
   const [openDialog, setOpenDialog] = React.useState(false);
 
+  const [openAlert, setOpenAlert] = useState(false);
+  const [alert, setAlert] = useState({
+    type: "success",
+    message: "",
+  });
+  const [openBackdrop, setOpenBackdrop] = useState(false);
+
   const handleClickOpen = () => {
     setOpenDialog(true);
   };
@@ -93,21 +102,23 @@ const TeacherDashboard = () => {
     pdfPublicId,
     answersPdfPublicId
   ) => {
+    setOpenBackdrop(true);
+
     const deleteResult = await deleteFile(pdfPublicId);
     if (!deleteResult.success) {
-      alert("Error deleting file. Please try again.");
+      // alert("Error deleting file. Please try again.");
       return;
     }
 
     const deleteAnswersResult = await deleteFile(answersPdfPublicId);
     if (!deleteAnswersResult.success) {
-      alert("Error deleting answers file. Please try again.");
+      // alert("Error deleting answers file. Please try again.");
       return;
     }
 
     const result = await deleteAssignment(assignmentId);
     if (!result.success) {
-      alert("Error deleting assignment. Please try again.");
+      // alert("Error deleting assignment. Please try again.");
       return;
     }
 
@@ -116,6 +127,13 @@ const TeacherDashboard = () => {
     );
 
     handleCloseDialog();
+
+    setAlert({
+      type: "success",
+      message: "Assignment deleted successfully!",
+    });
+    setOpenAlert(true);
+    setOpenBackdrop(false);
   };
 
   useEffect(() => {
@@ -215,6 +233,12 @@ const TeacherDashboard = () => {
     setUploading(false);
 
     handleClose();
+
+    setAlert({
+      type: "success",
+      message: "Assignment added successfully!",
+    });
+    setOpenAlert(true);
   };
 
   const handleChange = (e) => {
@@ -485,6 +509,13 @@ const TeacherDashboard = () => {
             ))
           )}
         </List>
+        <SnackbarMessage
+          type={alert.type}
+          message={alert.message}
+          openAlert={openAlert}
+          setOpenAlert={setOpenAlert}
+        />
+        <BackdropLoader open={openBackdrop} />
       </Container>
     </>
   );

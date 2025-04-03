@@ -109,6 +109,9 @@ const CloudinaryProvider = ({ children }) => {
       );
 
       const data = await response.json();
+
+      console.log("File deletion response:", data);
+
       return {
         success: data.result === "ok",
         message:
@@ -118,7 +121,6 @@ const CloudinaryProvider = ({ children }) => {
       };
     } catch (error) {
       console.error("Error deleting file:", error);
-      alert("File deletion failed. Try again.");
     }
   };
 
