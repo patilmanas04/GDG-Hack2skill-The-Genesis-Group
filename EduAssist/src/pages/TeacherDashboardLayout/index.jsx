@@ -14,6 +14,7 @@ import { FirebaseContext } from "../../contexts/FirebaseProvider";
 import ConnectWithoutContactIcon from "@mui/icons-material/ConnectWithoutContact";
 import TeacherDashboard from "../../components/TeacherDashboard";
 import StudentSubmissions from "../../components/StudentSubmissions";
+import CampaignIcon from "@mui/icons-material/Campaign";
 import Communication from "../../components/Communication";
 
 const CustomAppTitle = () => {
@@ -37,9 +38,9 @@ const teacherNavigation = [
     icon: <AssignmentIcon />,
   },
   {
-    segment: "communication",
-    title: "Communication",
-    icon: <ConnectWithoutContactIcon />,
+    segment: "announcements",
+    title: "Announcements",
+    icon: <CampaignIcon />,
   },
 ];
 
@@ -64,7 +65,7 @@ function DemoPageContent({ pathname }) {
     return <TeacherDashboard />;
   } else if (pathname === "/student-submissions") {
     return <StudentSubmissions />;
-  } else if (pathname === "/communication") {
+  } else if (pathname === "/announcements") {
     return <Communication />;
   }
 }

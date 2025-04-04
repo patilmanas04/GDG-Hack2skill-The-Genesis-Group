@@ -17,6 +17,7 @@ import { styled } from "@mui/material/styles";
 import { GoogleIcon } from "../../components/signin/CustomIcons";
 import { FirebaseContext } from "../../contexts/FirebaseProvider";
 import { UserContext } from "../../contexts/UserProvider";
+import AlertMessage from "../../components/AlertMessage";
 
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
@@ -53,6 +54,11 @@ const Signin = (props) => {
   const [passwordError, setPasswordError] = useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
   const [open, setOpen] = useState(false);
+  const [alert, setAlert] = useState({
+    type: "success",
+    message: "",
+  });
+  const [openAlert, setOpenAlert] = useState(false);
 
   const handleClickOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -76,7 +82,11 @@ const Signin = (props) => {
       });
       navigate("/");
     } else {
-      alert(result.message);
+      setAlert({
+        type: "error",
+        message: result.message,
+      });
+      setOpenAlert(true);
     }
   };
 
@@ -188,6 +198,12 @@ const Signin = (props) => {
             </Typography>
           </Box>
         </Card>
+        <AlertMessage
+          type={alert.type}
+          message={alert.message}
+          openAlert={openAlert}
+          setOpenAlert={setOpenAlert}
+        />
       </SignInContainer>
     </>
   );

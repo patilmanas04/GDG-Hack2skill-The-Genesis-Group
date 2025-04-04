@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Typography,
   CssBaseline,
@@ -33,6 +33,9 @@ import { FirebaseContext } from "../../contexts/FirebaseProvider";
 import { UserContext } from "../../contexts/UserProvider";
 import DeleteIcon from "@mui/icons-material/Delete";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import SnackbarMessage from "../SnackbarMessage";
+import BackdropLoader from "../BackdropLoader";
+import dateFormatter from "../../utils/DateFormatter";
 
 const VisuallyHiddenInput = styled("input")({
   clip: "rect(0 0 0 0)",
@@ -80,6 +83,13 @@ const TeacherDashboard = () => {
 
   const [openDialog, setOpenDialog] = React.useState(false);
 
+  const [openAlert, setOpenAlert] = useState(false);
+  const [alert, setAlert] = useState({
+    type: "success",
+    message: "",
+  });
+  const [openBackdrop, setOpenBackdrop] = useState(false);
+
   const handleClickOpen = () => {
     setOpenDialog(true);
   };
@@ -93,21 +103,23 @@ const TeacherDashboard = () => {
     pdfPublicId,
     answersPdfPublicId
   ) => {
+    setOpenBackdrop(true);
+
     const deleteResult = await deleteFile(pdfPublicId);
     if (!deleteResult.success) {
-      alert("Error deleting file. Please try again.");
+      // alert("Error deleting file. Please try again.");
       return;
     }
 
     const deleteAnswersResult = await deleteFile(answersPdfPublicId);
     if (!deleteAnswersResult.success) {
-      alert("Error deleting answers file. Please try again.");
+      // alert("Error deleting answers file. Please try again.");
       return;
     }
 
     const result = await deleteAssignment(assignmentId);
     if (!result.success) {
-      alert("Error deleting assignment. Please try again.");
+      // alert("Error deleting assignment. Please try again.");
       return;
     }
 
@@ -116,6 +128,13 @@ const TeacherDashboard = () => {
     );
 
     handleCloseDialog();
+
+    setAlert({
+      type: "success",
+      message: "Assignment deleted successfully!",
+    });
+    setOpenAlert(true);
+    setOpenBackdrop(false);
   };
 
   useEffect(() => {
@@ -215,6 +234,12 @@ const TeacherDashboard = () => {
     setUploading(false);
 
     handleClose();
+
+    setAlert({
+      type: "success",
+      message: "Assignment added successfully!",
+    });
+    setOpenAlert(true);
   };
 
   const handleChange = (e) => {
@@ -396,14 +421,22 @@ const TeacherDashboard = () => {
                     </Typography>
                     <Typography color="text.secondary">
                       Uploaded on:{" "}
-                      {new Date(assignment.createdAt).toLocaleDateString()}
+                      {dateFormatter(new Date(assignment.createdAt))}
                     </Typography>
                     <Typography color="text.secondary">
-                      Due date:{" "}
-                      {new Date(assignment.dueDate).toLocaleDateString()}
+                      Due date: {dateFormatter(new Date(assignment.dueDate))}
                     </Typography>
                   </CardContent>
-                  <CardActions sx={{ padding: 2, marginTop: -2 }}>
+                  <CardActions
+                    sx={{
+                      padding: 2,
+                      marginTop: -2,
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 1,
+                      alignItems: "start",
+                    }}
+                  >
                     <a
                       href={assignment.docUrl}
                       target="_blank"
@@ -411,6 +444,7 @@ const TeacherDashboard = () => {
                       style={{
                         color: "inherit",
                         textDecoration: "none",
+                        margin: 0,
                       }}
                     >
                       <Button variant="outlined" startIcon={<OpenInNewIcon />}>
@@ -424,6 +458,7 @@ const TeacherDashboard = () => {
                       style={{
                         color: "inherit",
                         textDecoration: "none",
+                        margin: 0,
                       }}
                     >
                       <Button variant="outlined" startIcon={<OpenInNewIcon />}>
@@ -434,6 +469,7 @@ const TeacherDashboard = () => {
                       variant="contained"
                       onClick={handleClickOpen}
                       endIcon={<DeleteIcon />}
+                      sx={{ margin: 0 + " !important" }}
                     >
                       Delete
                     </Button>
@@ -444,12 +480,11 @@ const TeacherDashboard = () => {
                       aria-describedby="alert-dialog-description"
                     >
                       <DialogTitle id="alert-dialog-title">
-                        Do you want to delete this assignment?
+                        {"Delete Assignment"}
                       </DialogTitle>
                       <DialogContent>
                         <DialogContentText id="alert-dialog-description">
-                          Are you sure you want to delete this assignment? This
-                          action cannot be undone.
+                          Are you sure you want to delete this assignment?
                         </DialogContentText>
                       </DialogContent>
                       <DialogActions>
@@ -474,6 +509,13 @@ const TeacherDashboard = () => {
             ))
           )}
         </List>
+        <SnackbarMessage
+          type={alert.type}
+          message={alert.message}
+          openAlert={openAlert}
+          setOpenAlert={setOpenAlert}
+        />
+        <BackdropLoader open={openBackdrop} />
       </Container>
     </>
   );

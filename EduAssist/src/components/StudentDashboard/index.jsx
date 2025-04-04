@@ -32,6 +32,9 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import SendIcon from "@mui/icons-material/Send";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router";
+import SnackbarMessage from "../SnackbarMessage";
+import dateFormatter from "../../utils/DateFormatter";
+import Alert from "@mui/material/Alert";
 
 const auth = getAuth();
 
@@ -84,6 +87,11 @@ const StudentDashboard = () => {
   const [currentAssignment, setCurrentAssignment] = useState({});
   const [open, setOpen] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [openAlert, setOpenAlert] = useState(false);
+  const [alert, setAlert] = useState({
+    type: "success",
+    message: "",
+  });
 
   const handleOpen = (assignment) => {
     setCurrentAssignment(assignment);
@@ -206,6 +214,12 @@ const StudentDashboard = () => {
 
     handleClose();
     setUploadedFile(null);
+
+    setAlert({
+      type: "success",
+      message: "Assignment submitted successfully!",
+    });
+    setOpenAlert(true);
   };
 
   return (
@@ -254,7 +268,7 @@ const StudentDashboard = () => {
                         </Typography>
                         <Typography color="text.secondary">
                           Posted on:{" "}
-                          {new Date(assignment.createdAt).toLocaleDateString()}
+                          {dateFormatter(new Date(assignment.createdAt))}
                         </Typography>
                       </Box>
                     </Box>
@@ -264,8 +278,7 @@ const StudentDashboard = () => {
                       Subject: {assignment.subject}
                     </Typography>
                     <Typography color="text.secondary">
-                      Due date:{" "}
-                      {new Date(assignment.dueDate).toLocaleDateString()}
+                      Due date: {dateFormatter(new Date(assignment.dueDate))}
                     </Typography>
                     <Box sx={{ maxWidth: "fit-content", marginTop: 2 }}>
                       <a
@@ -307,10 +320,19 @@ const StudentDashboard = () => {
                       startIcon={<CloudUploadIcon />}
                       onClick={() => handleOpen(assignment)}
                       sx={{ marginTop: 2 }}
-                      disabled={new Date(assignment.dueDate) < new Date()}
+                      disabled={
+                        new Date().setHours(0, 0, 0, 0) >
+                        new Date(assignment.dueDate).setHours(0, 0, 0, 0)
+                      }
                     >
                       Submit Assignment
                     </Button>
+                    {new Date().setHours(0, 0, 0, 0) >
+                      new Date(assignment.dueDate).setHours(0, 0, 0, 0) && (
+                      <Alert severity="error" sx={{ marginTop: 2 }}>
+                        This assignment is overdue.
+                      </Alert>
+                    )}
                     <Modal
                       open={open}
                       onClose={handleClose}
@@ -401,6 +423,12 @@ const StudentDashboard = () => {
             })
           )}
         </List>
+        <SnackbarMessage
+          type={alert.type}
+          message={alert.message}
+          openAlert={openAlert}
+          setOpenAlert={setOpenAlert}
+        />
       </Container>
     </>
   );
