@@ -341,6 +341,58 @@ const FirebaseProvider = ({ children }) => {
     }
   };
 
+  const storeMessage = async (messageData) => {
+    try {
+      const createdAt = new Date();
+      const date = createdAt.toISOString().split("T")[0];
+
+      let hours = createdAt.getHours();
+      const minutes = createdAt.getMinutes();
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const time = `${hours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+
+      const docRef = await addDoc(collection(db, "messages"), {
+        ...messageData,
+        date: date,
+        time: time,
+      });
+      console.log("Message stored with ID: ", docRef.id);
+      return {
+        success: true,
+        messageId: docRef.id,
+      };
+    } catch (error) {
+      console.error("Error storing message: ", error);
+      return {
+        success: false,
+        message: "Error storing message!",
+      };
+    }
+  };
+
+  const fetchAllMessages = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, "messages"));
+      const messages = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      return {
+        success: true,
+        messages: messages,
+      };
+    } catch (error) {
+      console.error("Error fetching messages: ", error);
+      return {
+        success: false,
+        message: "Error fetching messages!",
+        messages: [],
+      };
+    }
+  };
+
   return (
     <FirebaseContext.Provider
       value={{
@@ -356,6 +408,8 @@ const FirebaseProvider = ({ children }) => {
         addSubmission,
         getStudentSubmissions,
         getStudentSubmissionsByTeacherUid,
+        storeMessage,
+        fetchAllMessages,
       }}
     >
       {children}
