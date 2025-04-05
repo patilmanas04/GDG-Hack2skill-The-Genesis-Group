@@ -18,7 +18,7 @@ import { v4 as uuidv4 } from "uuid";
 import { UserContext } from "../../contexts/UserProvider";
 import { FirebaseContext } from "../../contexts/FirebaseProvider";
 
-const Chat = () => {
+const Announcements = () => {
   const { userCredentials, setUserCredentials } = useContext(UserContext);
   const { getUserDetailsByUid, storeMessage, fetchAllMessages } =
     useContext(FirebaseContext);
@@ -292,4 +292,4 @@ const Chat = () => {
   );
 };
 
-export default Chat;
+export default Announcements;

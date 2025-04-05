@@ -22,13 +22,14 @@ import CurrencyBitcoinIcon from "@mui/icons-material/CurrencyBitcoin";
 import SensorsIcon from "@mui/icons-material/Sensors";
 import StudentDashboard from "../../components/StudentDashboard";
 import MySubmissions from "../../components/MySubmissions";
-import Communication from "../../components/Communication";
+import Announcements from "../../components/Announcements";
 import Subject from "../../components/Subject";
 import { toast, Toaster } from "react-hot-toast";
 import notificationSound from "../../assets/notification.mp3";
 import { Avatar } from "@mui/material";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import { Link } from "react-router";
+import CampaignIcon from "@mui/icons-material/Campaign";
 
 const CustomAppTitle = () => (
   <Stack direction="row" alignItems="center" spacing={2}>
@@ -49,9 +50,9 @@ const studentNavigation = [
     icon: <ClassIcon />,
   },
   {
-    segment: "communication",
-    title: "Communication",
-    icon: <ConnectWithoutContactIcon />,
+    segment: "announcements",
+    title: "Announcements",
+    icon: <CampaignIcon />,
   },
   {
     segment: "subjects",
@@ -106,8 +107,8 @@ function DemoPageContent({ pathname, receivedMessage }) {
       return <StudentDashboard receivedMessage={receivedMessage} />;
     case "/my-submissions":
       return <MySubmissions />;
-    case "/communication":
-      return <Communication receivedMessage={receivedMessage} />;
+    case "/announcements":
+      return <Announcements receivedMessage={receivedMessage} />;
     case "/subjects/deep-learning":
       return (
         <Subject
@@ -219,7 +220,7 @@ const StudentDashboardLayout = ({ window, userCredentials }) => {
 
   const showToast = (teacherName, message) => {
     toast.custom(
-      () => (
+      (t) => (
         <Box
           sx={{
             background: "#f9fafb",
@@ -231,10 +232,15 @@ const StudentDashboardLayout = ({ window, userCredentials }) => {
             gap: 2,
             boxShadow: "0 6px 12px rgba(0, 0, 0, 0.08)",
             transition: "transform 0.2s, box-shadow 0.2s",
+            cursor: "pointer !important",
             "&:hover": {
               transform: "translateY(-2px)",
               boxShadow: "0 8px 16px rgba(0, 0, 0, 0.12)",
             },
+          }}
+          onClick={() => {
+            toast.dismiss(t.id);
+            router.navigate("/announcements");
           }}
         >
           <Avatar sx={{ bgcolor: "#3b82f6" }}>

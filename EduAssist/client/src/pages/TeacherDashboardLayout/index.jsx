@@ -15,7 +15,7 @@ import ConnectWithoutContactIcon from "@mui/icons-material/ConnectWithoutContact
 import TeacherDashboard from "../../components/TeacherDashboard";
 import StudentSubmissions from "../../components/StudentSubmissions";
 import CampaignIcon from "@mui/icons-material/Campaign";
-import Communication from "../../components/Communication";
+import Announcements from "../../components/Announcements";
 
 const CustomAppTitle = () => {
   return (
@@ -66,7 +66,7 @@ function DemoPageContent({ pathname }) {
   } else if (pathname === "/student-submissions") {
     return <StudentSubmissions />;
   } else if (pathname === "/announcements") {
-    return <Communication />;
+    return <Announcements />;
   }
 }
 
