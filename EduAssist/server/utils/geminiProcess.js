@@ -9,10 +9,7 @@ const path = require("path");
 dotenv.config();
 
 // required variables
-const CLOUDINARY_URL =
-  "https://res.cloudinary.com/dr2izxsrr/image/upload/v1743231326/AssignmentAnswers_vb34fr.pdf";
-const TEACHER_PDF_URL =
-  "https://res.cloudinary.com/dr2izxsrr/image/upload/v1743166781/submissions_m147tz.pdf";
+
 const PDF_DIR = "./uploads";
 const PDF_PATH = "./uploads/student_answers.pdf";
 const TEACHER_PDF_PATH = "./uploads/teacher_answers.pdf";
@@ -44,7 +41,7 @@ async function downloadPDF(url, path) {
       writer.on("error", reject);
     });
   } catch (error) {
-    console.error("Download Error:", error);
+    throw new Error(`Failed to download PDF: ${error.message}`);
   }
 }
 
@@ -58,27 +55,55 @@ async function extractTextFromPDF(pdfPath) {
 
 // Process Text into Q&A Format
 function extractQA(text) {
-  const regex =
-    /(?:Q(?:uestion)?\s*)?(\d+)[).:-]?\s*(.+?)\s*\n\s*(?:A(?:nswer)?\s*\d*[).:-]?\s*)?([\s\S]+?)(?=\n(?:Q(?:uestion)?\s*)?\d+[).:-]|\n*$)/gis;
+  const qaPairs = [];
+  const lines = text.split("\n");
+  let currentQuestion = null;
+  let currentAnswer = [];
+  const questionRegex =
+    /^\s*(Q(?:uestion)?[\s.:]*)?(\d+)[).:\s-]*\s*(.+?)\s*$/i;
+  const answerStartRegex = /^\s*Answer[\s.:]*\s*/i;
+  let isAnswering = false;
 
-  let matches,
-    qaPairs = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
 
-  while ((matches = regex.exec(text)) !== null) {
-    let question = matches[1].trim();
-    let questionText = matches[2].trim();
-    let answerText = matches[3].trim();
+    // Skip empty lines
+    if (line === "") continue;
 
-    // Ensure answer is properly captured
-    if (answerText.endsWith("Question") || answerText.endsWith("Q:")) {
-      answerText = answerText
-        .substring(0, answerText.lastIndexOf("Question"))
-        .trim();
+    // Detect start of new question
+    const qMatch = line.match(questionRegex);
+    if (qMatch && !line.match(answerStartRegex)) {
+      if (currentQuestion && currentAnswer.length > 0) {
+        qaPairs.push({
+          question: currentQuestion,
+          answer: currentAnswer.join("\n").trim(),
+        });
+      }
+      currentQuestion = `${qMatch[2]}. ${qMatch[3].trim()}`;
+      currentAnswer = [];
+      isAnswering = false;
+      continue;
     }
 
+    // Detect explicit answer line
+    if (answerStartRegex.test(line)) {
+      isAnswering = true;
+      const cleanLine = line.replace(answerStartRegex, "").trim();
+      if (cleanLine) currentAnswer.push(cleanLine);
+      continue;
+    }
+
+    // Accumulate answer if we are in answer mode or if no explicit "Answer:" but still reading answer
+    if (currentQuestion) {
+      currentAnswer.push(line);
+    }
+  }
+
+  // Push the last pair if exists
+  if (currentQuestion && currentAnswer.length > 0) {
     qaPairs.push({
-      question: `${question}. ${questionText}`,
-      answer: answerText,
+      question: currentQuestion,
+      answer: currentAnswer.join("\n").trim(),
     });
   }
 
@@ -93,93 +118,105 @@ async function gradeAnswers(studentQA, teacherQA) {
   for (let i = 0; i < studentQA.length; i++) {
     const studentAnswer = studentQA[i]?.answer || "";
     const teacherAnswer = teacherQA[i]?.answer || "";
+    const question = studentQA[i]?.question || `Question ${i + 1}`;
 
     const prompt = `
-        You are an expert examiner tasked with evaluating a student's answer based on a teacher's model answer. Your goal is to provide **an accurate, fair, and insightful assessment** of the student's response.
+You are an expert examiner tasked with evaluating a student's answer based on a teacher's model answer.
 
-### **Inputs:**
-1️⃣ **Teacher's Answer (Reference Answer)**:  
-"${teacherAnswer}"  
-2️⃣ **Student's Answer (Submitted Response)**:  
-"${studentAnswer}"  
+## Inputs:
+1. Teacher's Answer (Reference Answer):
+"${teacherAnswer}"
 
-### **Evaluation Criteria (Score out of 10)**:
-- **Accuracy (4 points)**: Does the student's answer correctly convey the intended meaning?  
-- **Relevance (3 points)**: Does the response stay on-topic and address the key aspects?  
-- **Completeness (3 points)**: Does the answer include all necessary details and explanations?  
+2. Student's Answer (Submitted Response):
+"${studentAnswer}"
 
-### **Your Output Format (JSON)**:
-\`\`\`json
+## Evaluation Criteria (Score out of 10):
+- Accuracy (4 points)
+- Relevance (3 points)
+- Completeness (3 points)
+
+## Output Instructions:
+- Return only valid JSON (no markdown or explanations)
+- All string values must be quoted properly
+- Decimal scores only (e.g., 2.5, 3.33)
+- Provide a grade out of 10 and breakdown of each category
+- Provide 2 improvement suggestions
+
+## JSON Output Format:
 {
-  "question": "${studentQA[i]?.question}",
+  "question": "${question}",
   "teacher_answer": "${teacherAnswer}",
   "student_answer": "${studentAnswer}",
-  "grade": X, 
+  "grade": X,
   "evaluation": {
-    "accuracy": X/4, 
-    "relevance": X/3, 
-    "completeness": X/3
+    "accuracy": X,
+    "relevance": X,
+    "completeness": X
   },
   "improvement_suggestions": [
     "Suggestion 1",
     "Suggestion 2"
   ]
 }
-\`\`\`
-        `;
+
+# after analyzing all content give them overall score out of 100. 
+    `;
 
     try {
       const response = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
       });
 
-      // Extract AI Response Text
-      let rawFeedback =
+      let raw =
         response?.response?.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-      // Remove Markdown Code Block Wrapper (```json ... ```)
-      let cleanedFeedback = rawFeedback.replace(/```json|```/g, "").trim();
+      // 🧹 Clean up and sanitize the Gemini output
+      let cleaned = raw
+        .replace(/```json|```/g, "") // Remove markdown fences
+        .replace(/[“”]/g, '"') // Replace fancy quotes
+        .replace(/[‘’]/g, "'") // Replace fancy single quotes
+        .replace(/(\d+)\/(\d+)/g, (_, a, b) =>
+          (parseFloat(a) / parseFloat(b)).toFixed(2)
+        ) // Convert fractions
+        .trim();
 
-      // Convert Fractions (3/10, 1/4) to Decimals
-      cleanedFeedback = cleanedFeedback.replace(
-        /(\d+)\/(\d+)/g,
-        (match, num, den) => (num / den).toFixed(2)
-      );
+      let feedback;
 
-      // Parse JSON Response
-      let feedback = JSON.parse(cleanedFeedback);
+      try {
+        feedback = JSON.parse(cleaned);
+      } catch (jsonErr) {
+        continue;
+      }
 
-      let letterGrade = convertToLetterGrade(feedback?.grade || 0);
-      let evaluation = {
-        accuracy: Math.min(1, Math.max(0, feedback?.evaluation?.accuracy || 0)),
+      const gradeValue = feedback?.grade || 0;
+      const evaluation = {
+        accuracy: Math.min(
+          1,
+          (feedback?.evaluation?.accuracy || 0) / 4
+        ).toFixed(2),
         relevance: Math.min(
           1,
-          Math.max(0, feedback?.evaluation?.relevance || 0)
-        ),
+          (feedback?.evaluation?.relevance || 0) / 3
+        ).toFixed(2),
         completeness: Math.min(
           1,
-          Math.max(0, feedback?.evaluation?.completeness || 0)
-        ),
+          (feedback?.evaluation?.completeness || 0) / 3
+        ).toFixed(2),
       };
-      // Store Processed Data
+
       results.push({
-        question: studentQA[i]?.question,
+        question,
         teacher_answer: teacherAnswer,
         student_answer: studentAnswer,
-        grade: letterGrade,
-        evaluation: evaluation,
+        grade: convertToLetterGrade(gradeValue),
+        evaluation,
         improvement_suggestions: feedback?.improvement_suggestions || [],
       });
     } catch (error) {
-      console.error("Error generating content:", error);
-      results.push({
-        question: studentQA[i]?.question,
-        teacher_answer: teacherAnswer,
-        student_answer: studentAnswer,
-        error: "AI processing failed",
-      });
+      continue; // Skip to the next question if there's an error
     }
   }
+
   return results;
 }
 
@@ -203,7 +240,6 @@ async function saveToFirebase(data) {
     batch.set(docRef, item);
   });
   await batch.commit();
-  console.log("Data saved to Firebase");
 }
 
 // Function to delete all PDF files in a directory
@@ -223,18 +259,15 @@ function deleteAllPDFFilesInDirectory(dirPath) {
     });
     return true;
   } else {
-    console.error("Directory does not exist:", dirPath);
+    throw new Error(`Directory ${dirPath} does not exist`);
   }
 }
 
 // overall Process function which can perform all task related to grading
-// async function processGrading(studentPdfUrl, teacherPdfUrl) {
-async function processGrading() {
+async function processGrading(studentPdfUrl, teacherPdfUrl) {
   console.log("Verifying Provided Assignments...");
-  // await downloadPDF(studentPdfUrl, PDF_PATH);
-  await downloadPDF(CLOUDINARY_URL, PDF_PATH);
-  // await downloadPDF(teacherPdfUrl, TEACHER_PDF_PATH);
-  await downloadPDF(TEACHER_PDF_URL, TEACHER_PDF_PATH);
+  await downloadPDF(studentPdfUrl, PDF_PATH);
+  await downloadPDF(teacherPdfUrl, TEACHER_PDF_PATH);
 
   console.log("Checking your Assignments...");
   const studentText = await extractTextFromPDF(PDF_PATH);
@@ -250,10 +283,6 @@ async function processGrading() {
 
   console.log("Analzing your Answers...");
   const gradedResults = await gradeAnswers(studentQA, teacherQA);
-
-  // console.log("save to Firebase...");
-  // await saveToFirebase(gradedResults);
-  console.log(gradedResults);
 
   // res.json({ message: "Processing complete", data: gradedResults });
 
