@@ -1,0 +1,12 @@
+@google/generative-ai==0.24.0
+axios==1.8.4
+cors==2.8.5
+dotenv==16.4.7
+express==4.21.2
+firebase-admin==13.2.0
+fs==0.0.1-security
+path==0.12.7
+pdf-parse==1.1.1
+route==0.2.5
+router==2.2.0
+tesseract.js==6.0.0
