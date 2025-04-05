@@ -1,3 +1,5 @@
+// src/layouts/StudentDashboardLayout.jsx
+
 import * as React from "react";
 import { useRef, useEffect, useState, useContext, useMemo } from "react";
 import PropTypes from "prop-types";
@@ -22,17 +24,18 @@ import StudentDashboard from "../../components/StudentDashboard";
 import MySubmissions from "../../components/MySubmissions";
 import Communication from "../../components/Communication";
 import Subject from "../../components/Subject";
-import { toast, Toaster } from "react-hot-toast"; // Import toast and Toaster
-import notificationSound from "../../assets/notification.mp3"; // Import your sound file
+import { toast, Toaster } from "react-hot-toast";
+import notificationSound from "../../assets/notification.mp3";
+import { Avatar } from "@mui/material";
+import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
+import { Link } from "react-router";
 
-const CustomAppTitle = () => {
-  return (
-    <Stack direction="row" alignItems="center" spacing={2}>
-      <CloudCircleIcon fontSize="large" color="primary" />
-      <Typography variant="h6">EduAssist - Student</Typography>
-    </Stack>
-  );
-};
+const CustomAppTitle = () => (
+  <Stack direction="row" alignItems="center" spacing={2}>
+    <CloudCircleIcon fontSize="large" color="primary" />
+    <Typography variant="h6">EduAssist - Student</Typography>
+  </Stack>
+);
 
 const studentNavigation = [
   {
@@ -96,83 +99,55 @@ const demoTheme = createTheme({
 });
 
 function DemoPageContent({ pathname, receivedMessage }) {
-  if (pathname === "/subjects") {
-    pathname = "/subjects/deep-learning";
-  }
-  if (pathname === "/dashboard") {
-    return <StudentDashboard receivedMessage={receivedMessage} />;
-  }
-  if (pathname === "/my-submissions") {
-    return <MySubmissions />;
-  }
-  if (pathname === "/communication") {
-    return <Communication receivedMessage={receivedMessage} />;
-  }
-  if (pathname === "/subjects/deep-learning") {
-    return (
-      <Subject subjectName="Deep Learning" receivedMessage={receivedMessage} />
-    );
-  }
-  if (pathname === "/subjects/compiler-design") {
-    return (
-      <Subject
-        subjectName="Compiler Design"
-        receivedMessage={receivedMessage}
-      />
-    );
-  }
-  if (pathname === "/subjects/blockchain-technologies") {
-    return (
-      <Subject
-        subjectName="Blockchain Technologies"
-        receivedMessage={receivedMessage}
-      />
-    );
-  }
-  if (pathname === "/subjects/internet-of-things") {
-    return (
-      <Subject
-        subjectName="Internet of Things"
-        receivedMessage={receivedMessage}
-      />
-    );
+  if (pathname === "/subjects") pathname = "/subjects/deep-learning";
+
+  switch (pathname) {
+    case "/dashboard":
+      return <StudentDashboard receivedMessage={receivedMessage} />;
+    case "/my-submissions":
+      return <MySubmissions />;
+    case "/communication":
+      return <Communication receivedMessage={receivedMessage} />;
+    case "/subjects/deep-learning":
+      return (
+        <Subject
+          subjectName="Deep Learning"
+          receivedMessage={receivedMessage}
+        />
+      );
+    case "/subjects/compiler-design":
+      return (
+        <Subject
+          subjectName="Compiler Design"
+          receivedMessage={receivedMessage}
+        />
+      );
+    case "/subjects/blockchain-technologies":
+      return (
+        <Subject
+          subjectName="Blockchain Technologies"
+          receivedMessage={receivedMessage}
+        />
+      );
+    case "/subjects/internet-of-things":
+      return (
+        <Subject
+          subjectName="Internet of Things"
+          receivedMessage={receivedMessage}
+        />
+      );
+    default:
+      return <StudentDashboard receivedMessage={receivedMessage} />;
   }
 }
 
 DemoPageContent.propTypes = {
   pathname: PropTypes.string.isRequired,
-  receivedMessage: PropTypes.oneOfType([PropTypes.string, PropTypes.object]), // Allow string or object
+  receivedMessage: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
 };
 
-const StudentDashboardLayout = (props) => {
-  const firebaseContext = useContext(FirebaseContext);
-  const { signoutUser } = firebaseContext;
-  const { window, userCredentials } = props;
-
-  const audioRef = useRef(new Audio(notificationSound));
-  const [audioReady, setAudioReady] = useState(false);
-
-  useEffect(() => {
-    const currentAudio = audioRef.current; // Store current audio object
-
-    const handleCanPlayThrough = () => {
-      setAudioReady(true);
-      console.log("Notification sound is ready to play.");
-    };
-
-    const handleError = (error) => {
-      console.error("Error loading notification sound:", error);
-    };
-
-    currentAudio.addEventListener("canplaythrough", handleCanPlayThrough);
-    currentAudio.addEventListener("error", handleError);
-
-    return () => {
-      currentAudio.removeEventListener("canplaythrough", handleCanPlayThrough);
-      currentAudio.removeEventListener("error", handleError);
-    };
-  }, []);
-
+const StudentDashboardLayout = ({ window, userCredentials }) => {
+  const { signoutUser } = useContext(FirebaseContext);
   const [session, setSession] = useState({
     user: {
       name: userCredentials.name,
@@ -181,255 +156,121 @@ const StudentDashboardLayout = (props) => {
     },
   });
 
-  const [rawReceivedMessage, setRawReceivedMessage] = useState(null); // Store the raw data
+  const audioRef = useRef(new Audio(notificationSound));
   const [displayMessage, setDisplayMessage] = useState("");
   const websocket = useRef(null);
 
   useEffect(() => {
-    setSession({
-      user: {
-        name: userCredentials.name,
-        email: userCredentials.email,
-        image: userCredentials.photo,
-      },
-    });
-  }, [userCredentials]);
+    const audio = audioRef.current;
+
+    audio.addEventListener("canplaythrough", () =>
+      console.log("Notification sound ready")
+    );
+    audio.addEventListener("error", (e) =>
+      console.error("Notification sound error:", e)
+    );
+
+    return () => {
+      audio.removeEventListener("canplaythrough", () => {});
+      audio.removeEventListener("error", () => {});
+    };
+  }, []);
 
   useEffect(() => {
     websocket.current = new WebSocket("ws://localhost:8080");
 
-    websocket.current.onopen = () => {
-      console.log("Connected to WebSocket server");
-    };
-
     websocket.current.onmessage = (event) => {
-      console.log("Received raw data from server:", event.data);
-      setRawReceivedMessage(event.data); // Store the raw event data
-      processMessage(event.data);
+      console.log("WebSocket message:", event.data);
+      handleMessage(event.data);
     };
 
-    websocket.current.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-
-    websocket.current.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
-
-    return () => {
-      if (websocket.current) {
-        websocket.current.close();
-      }
-    };
+    return () => websocket.current?.close();
   }, []);
 
-  const showToast = (teacherName, message) => {
-    const truncatedMessage =
-      message.length > 50 ? message.substring(0, 50) + "..." : message; // Adjust length as needed
+  const handleMessage = (data) => {
+    try {
+      if (typeof data === "string") {
+        const parsed = JSON.parse(data);
+        if (parsed.teacherName && parsed.message) {
+          showToast(parsed.teacherName, parsed.message);
+          audioRef.current.play();
+          setDisplayMessage(JSON.stringify(parsed));
+        } else {
+          toast.error("Invalid message format.");
+          setDisplayMessage(data);
+        }
+      } else if (data instanceof Blob) {
+        const reader = new FileReader();
+        reader.onload = () => handleMessage(reader.result);
+        reader.onerror = () => toast.error("Error reading Blob");
+        reader.readAsText(data);
+      } else if (typeof data === "object") {
+        setDisplayMessage(JSON.stringify(data));
+        toast("Received object data");
+      } else {
+        setDisplayMessage(String(data));
+        toast("Received non-standard data");
+      }
+    } catch (err) {
+      toast.error("Failed to parse message");
+      setDisplayMessage(String(data));
+    }
+  };
 
+  const showToast = (teacherName, message) => {
     toast.custom(
-      (t) => (
-        <div
-          style={{
-            background: "#fff",
-            color: "#333",
-            borderRadius: "8px",
-            padding: "12px",
-            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+      () => (
+        <Box
+          sx={{
+            background: "#f9fafb",
+            color: "#1f2937",
+            borderRadius: "12px",
+            padding: "16px",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 2,
+            boxShadow: "0 6px 12px rgba(0, 0, 0, 0.08)",
+            transition: "transform 0.2s, box-shadow 0.2s",
+            "&:hover": {
+              transform: "translateY(-2px)",
+              boxShadow: "0 8px 16px rgba(0, 0, 0, 0.12)",
+            },
           }}
         >
-          <Typography variant="subtitle1" fontWeight="bold">
-            {teacherName}
-          </Typography>
-          <Typography variant="body2" style={{ marginTop: "4px" }}>
-            {truncatedMessage}
-          </Typography>
-        </div>
+          <Avatar sx={{ bgcolor: "#3b82f6" }}>
+            <NotificationsActiveIcon />
+          </Avatar>
+
+          <Box>
+            <Typography variant="subtitle1" fontWeight="bold">
+              {teacherName}
+            </Typography>
+            <Typography variant="body2" mt={0.5}>
+              {message.length > 60 ? `${message.slice(0, 60)}...` : message}
+            </Typography>
+          </Box>
+        </Box>
       ),
       {
-        id: "teacher-message", // Important: Add an ID to prevent duplicates!
-        position: "top-right",
-        autoClose: 2000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: demoTheme.palette.mode,
-        onMount: () => {
-          audioRef.current.play();
-        },
+        id: "teacher-message",
+        position: "top-center",
+        duration: 2000,
       }
     );
   };
 
-  const processMessage = (data) => {
-    if (typeof data === "string") {
-      try {
-        const parsedMessage = JSON.parse(data);
-        if (
-          parsedMessage &&
-          parsedMessage.message &&
-          parsedMessage.teacherName
-        ) {
-          showToast(parsedMessage.teacherName, parsedMessage.message);
-          audioRef.current.play();
-          setDisplayMessage(JSON.stringify(parsedMessage));
-        } else {
-          setDisplayMessage(data);
-          toast.error("Invalid message format received.", {
-            position: "top-right",
-            autoClose: 2000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-            theme: demoTheme.palette.mode,
-          });
-        }
-      } catch (error) {
-        console.error("Error parsing JSON string:", error);
-        setDisplayMessage(data);
-        toast.error("Received a non-JSON string.", {
-          position: "top-right",
-          autoClose: 2000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: demoTheme.palette.mode,
-        });
-      }
-    } else if (data instanceof Blob) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const blobText = reader.result;
-        console.log("Blob content:", blobText);
-        try {
-          const parsedBlobData = JSON.parse(blobText);
-          if (
-            parsedBlobData &&
-            parsedBlobData.message &&
-            parsedBlobData.teacherName
-          ) {
-            showToast(parsedBlobData.teacherName, parsedBlobData.message);
-            setDisplayMessage(blobText); // Or JSON.stringify(parsedBlobData)
-          } else {
-            setDisplayMessage(blobText);
-            toast.info("Received Blob data.", {
-              // Use info as it's not an error necessarily
-              position: "top-right",
-              autoClose: 2000,
-              hideProgressBar: false,
-              closeOnClick: true,
-              pauseOnHover: true,
-              draggable: true,
-              progress: undefined,
-              theme: demoTheme.palette.mode,
-            });
-          }
-        } catch (parseError) {
-          console.error("Error parsing Blob content as JSON:", parseError);
-          setDisplayMessage(blobText);
-          toast.info("Received Blob data (non-JSON).", {
-            // Indicate it's Blob, not necessarily an error
-            position: "top-right",
-            autoClose: 2000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-            theme: demoTheme.palette.mode,
-          });
-        }
-      };
-      reader.onerror = (error) => {
-        console.error("Error reading Blob:", error);
-        setDisplayMessage("[Error reading Blob]");
-        toast.error("Error reading received data.", {
-          position: "top-right",
-          autoClose: 2000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: demoTheme.palette.mode,
-        });
-      };
-      reader.readAsText(data); // Try to read Blob as text
-      return; // Important: Exit here as Blob processing is asynchronous
-    } else if (typeof data === "object") {
-      try {
-        setDisplayMessage(JSON.stringify(data));
-        toast.info("Received an object.", {
-          // Use info as it's not JSON string
-          position: "top-right",
-          autoClose: 2000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: demoTheme.palette.mode,
-        });
-      } catch (error) {
-        console.error("Error stringifying object:", error);
-        setDisplayMessage("[Object received]");
-        toast.error("Received an unexpected object format.", {
-          position: "top-right",
-          autoClose: 2000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: demoTheme.palette.mode,
-        });
-      }
-    } else {
-      setDisplayMessage(String(data));
-      toast("Received data.", {
-        // Generic toast for other types
-        position: "top-right",
-        autoClose: 2000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: demoTheme.palette.mode,
-      });
-    }
-  };
-
-  const authentication = useMemo(() => {
-    return {
-      signIn: () => {
-        setSession({
-          user: {
-            name: userCredentials.name,
-            email: userCredentials.email,
-            image: userCredentials.photo,
-          },
-        });
-      },
-      signOut: () => {
-        signoutUser();
-      },
-    };
-  }, [signoutUser, userCredentials]);
+  const authentication = useMemo(
+    () => ({
+      signIn: () => setSession({ user: userCredentials }),
+      signOut: () => signoutUser(),
+    }),
+    [signoutUser, userCredentials]
+  );
 
   const router = useDemoRouter("/dashboard");
-
-  // Remove this const when copying and pasting into your project.
-  const demoWindow = window !== undefined ? window() : undefined;
+  const demoWindow = window ? window() : undefined;
 
   return (
-    // preview-start
     <AppProvider
       session={session}
       authentication={authentication}
@@ -438,11 +279,7 @@ const StudentDashboardLayout = (props) => {
       theme={demoTheme}
       window={demoWindow}
     >
-      <DashboardLayout
-        slots={{
-          appTitle: CustomAppTitle,
-        }}
-      >
+      <DashboardLayout slots={{ appTitle: CustomAppTitle }}>
         <Toaster />
         <DemoPageContent
           pathname={router.pathname}
@@ -450,7 +287,6 @@ const StudentDashboardLayout = (props) => {
         />
       </DashboardLayout>
     </AppProvider>
-    // preview-end
   );
 };
 

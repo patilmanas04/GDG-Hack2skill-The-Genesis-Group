@@ -1,5 +1,3 @@
-import { useEffect, useState, useRef, useContext } from "react";
-import { socket } from "../../services/websocketServices";
 import {
   Container,
   TextField,
@@ -11,323 +9,181 @@ import {
   Typography,
   Avatar,
   IconButton,
-  Snackbar, // Import Snackbar for notification display
-  Alert, // Import Alert for styling the notification
 } from "@mui/material";
 import { ArrowDownward } from "@mui/icons-material";
-import { UserContext } from "../../contexts/UserProvider";
+import { useEffect, useRef, useState, useContext, useCallback } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { FirebaseContext } from "../../contexts/FirebaseProvider";
+import { socket } from "../../services/websocketServices";
 import { v4 as uuidv4 } from "uuid";
+import { UserContext } from "../../contexts/UserProvider";
+import { FirebaseContext } from "../../contexts/FirebaseProvider";
 
 const Chat = () => {
-  // State to manage the list of messages, new message input, and scroll button visibility.
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [showScrollButton, setShowScrollButton] = useState(false);
-
-  // Refs to access the message container and the end of the message list for scrolling.
-  const messagesEndRef = useRef(null);
-  const messagesContainerRef = useRef(null);
-
-  // Contexts for user credentials and Firebase operations.
   const { userCredentials, setUserCredentials } = useContext(UserContext);
   const { getUserDetailsByUid, storeMessage, fetchAllMessages } =
     useContext(FirebaseContext);
 
-  // Ref to store the previous length of the messages array for detecting new messages.
-  const prevMessagesLength = useRef(0);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
-  // Fetch user details on authentication state change.
+  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+
+  // Set User on Auth
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const userDetailsResult = await getUserDetailsByUid(user.uid);
-        if (userDetailsResult.success) {
-          setUserCredentials({
-            name: userDetailsResult.userDetails.name,
-            email: userDetailsResult.userDetails.email,
-            photo: userDetailsResult.userDetails.photo,
-            role: userDetailsResult.userDetails.role,
-            uid: userDetailsResult.userDetails.uid,
-          });
-        } else {
-          console.error(
-            "Error getting user details:",
-            userDetailsResult.message
-          );
-        }
+        const res = await getUserDetailsByUid(user.uid);
+        if (res.success) setUserCredentials(res.userDetails);
       }
     });
-    return () => unsubscribe(); // Cleanup the listener.
+    return unsubscribe;
   }, []);
 
-  // Fetch messages from Firebase and update the message list.
-  useEffect(() => {
-    const fetchMessages = async () => {
-      const messagesResult = await fetchAllMessages();
-      if (messagesResult.success) {
-        let filteredMessages = messagesResult.messages;
-        if (userCredentials.role === "teacher") {
-          filteredMessages = filteredMessages.filter(
-            (msg) => msg.senderId === userCredentials.uid
-          );
-        }
-
-        // Sort messages by time.
-        filteredMessages.sort((a, b) => {
-          const timeA = parseTimeString(a.time);
-          const timeB = parseTimeString(b.time);
-          return timeA - timeB;
-        });
-
-        // Group messages by date.
-        const grouped = groupMessagesByDate(filteredMessages);
-        setMessages([...grouped]); // Reverse the order to show the latest messages at the bottom.
-      } else {
-        console.error("Error fetching messages:", messagesResult.message);
+  // Fetch Messages
+  const loadMessages = useCallback(async () => {
+    const res = await fetchAllMessages();
+    if (res.success) {
+      let msgs = res.messages;
+      if (userCredentials.role === "teacher") {
+        msgs = msgs.filter((m) => m.senderId === userCredentials.uid);
       }
-    };
-    fetchMessages();
-    const intervalId = setInterval(fetchMessages, 5000); // Auto-reload messages every 5 seconds.
-    return () => clearInterval(intervalId); // Cleanup the interval.
-  }, [userCredentials.role, userCredentials.uid]);
-
-  // Process incoming socket messages and update the message list.
-  const processMessage = (message) => {
-    let parsedMessage;
-    try {
-      parsedMessage = JSON.parse(message);
-    } catch {
-      parsedMessage = {
-        message,
-        teacherName: "Unknown",
-        createdAt: new Date().toISOString(),
-        senderId: "unknown",
-      };
+      msgs.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      setMessages(groupMessagesByDate(msgs));
     }
+  }, [userCredentials]);
 
-    const isNewMessage =
-      messages.findIndex(
-        (msg) => msg.messageUid === parsedMessage.messageUid
-      ) === -1;
-
-    if (
-      userCredentials.role === "student" ||
-      parsedMessage.senderId === userCredentials.uid
-    ) {
-      setMessages((prev) => [...prev, parsedMessage]);
-    }
-
-    // Show browser notification if the user is a student and notifications are granted.
-    if (
-      userCredentials.role === "student" &&
-      Notification.permission === "granted" &&
-      isNewMessage &&
-      parsedMessage.senderId !== userCredentials.uid
-    ) {
-      new Notification("New Message", {
-        body: parsedMessage.message,
-        icon: "/chat-icon.png",
-      }).onclick = () => window.focus();
-    }
-  };
-
-  // Listen for socket messages.
   useEffect(() => {
-    const handleMessage = (event) => {
-      if (event.data instanceof Blob) {
-        const reader = new FileReader();
-        reader.onload = () => processMessage(reader.result);
-        reader.readAsText(event.data);
-      } else {
-        processMessage(event.data);
-      }
-    };
+    if (!userCredentials.uid) return;
+    loadMessages(); // initial fetch
+    const interval = setInterval(loadMessages, 2000);
+    return () => clearInterval(interval);
+  }, [loadMessages]);
 
-    socket.onmessage = handleMessage;
-    return () => {
-      socket.onmessage = null; // Cleanup the listener.
-    };
-  }, [userCredentials.role, userCredentials.uid, messages]); // Added messages to dependency array
-
-  // Send a new message.
-  const sendMessage = async () => {
-    if (newMessage.trim()) {
-      const messageObject = {
-        messageUid: uuidv4(),
-        teacherName: userCredentials.name,
-        message: newMessage,
-        senderId: userCredentials.uid,
-      };
-      socket.send(JSON.stringify(messageObject));
-      setNewMessage("");
-      await storeMessage(messageObject);
-    }
-  };
-
-  // Scroll to the bottom when a new message is added.
-  useEffect(() => {
-    if (messages.length > prevMessagesLength.current) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-    prevMessagesLength.current = messages.length; // Update the previous length.
-  }, [messages]);
-
-  // Parse time string into a Date object for sorting.
-  const parseTimeString = (timeString) => {
-    const [time, period] = timeString.split(" ");
-    const [hours, minutes] = time.split(":").map(Number);
-    let date = new Date();
-    date.setHours(period === "PM" && hours !== 12 ? hours + 12 : hours);
-    date.setMinutes(minutes);
-    return date;
-  };
-
-  // Group messages by date.
+  // Group by Date
   const groupMessagesByDate = (messages) => {
-    const groupedMessages = [];
+    const grouped = [];
     let currentDate = null;
 
     messages.forEach((msg) => {
-      const messageDate = msg.date;
+      const msgDate = msg.createdAt.split("T")[0];
 
-      if (messageDate !== currentDate) {
-        currentDate = messageDate;
+      if (msgDate !== currentDate) {
+        currentDate = msgDate;
 
-        let headerText = messageDate;
-        const today = new Date().toISOString().split("T")[0];
-        const yesterday = new Date(new Date().setDate(new Date().getDate() - 1))
-          .toISOString()
-          .split("T")[0];
-
-        if (messageDate === today) {
-          headerText = "Today";
-        } else if (messageDate === yesterday) {
-          headerText = "Yesterday";
-        }
-
-        groupedMessages.push({
-          type: "header",
-          date: messageDate,
-          text: headerText,
+        // Convert to readable format (e.g., "April 4, 2025")
+        const formattedDate = new Date(msgDate).toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
         });
+
+        grouped.push({ type: "header", text: formattedDate });
       }
 
-      groupedMessages.push({ type: "message", ...msg });
+      grouped.push({ type: "message", ...msg });
     });
 
-    return groupedMessages;
+    return grouped;
   };
 
-  // Handle scroll event to show/hide and reposition the scroll-to-bottom button.
+  // Send Message
+  const sendMessage = async () => {
+    if (!newMessage.trim()) return;
+
+    const now = new Date().toISOString();
+    const msg = {
+      messageUid: uuidv4(),
+      teacherName: userCredentials.name,
+      teacherPhoto: userCredentials.photo || "", // ✅ Add teacher photo here
+      senderId: userCredentials.uid,
+      createdAt: now,
+      message: newMessage,
+    };
+
+    socket.send(JSON.stringify(msg));
+    setNewMessage("");
+    await storeMessage(msg);
+  };
+
+  // Scroll to bottom
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Track Scroll Position
   useEffect(() => {
-    const handleScroll = () => {
-      if (messagesContainerRef.current) {
-        const { scrollTop, scrollHeight, clientHeight } =
-          messagesContainerRef.current;
+    const container = messagesContainerRef.current;
+    if (!container) return;
 
-        // Show button when scrolled up, hide when at the bottom
-        setShowScrollButton(scrollTop + clientHeight < scrollHeight - 50);
-      }
+    const onScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      setShowScrollButton(scrollHeight - scrollTop - clientHeight > 20);
     };
 
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.addEventListener("scroll", handleScroll);
-    }
-
-    return () => {
-      if (messagesContainerRef.current) {
-        messagesContainerRef.current.removeEventListener(
-          "scroll",
-          handleScroll
-        );
-      }
-    };
+    container.addEventListener("scroll", onScroll);
+    return () => container.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Scroll to the bottom of the message list.
-  const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
   return (
-    <Container sx={{ padding: "20px" }}>
-      <Box>
-        <Typography variant="h5" fontWeight="bold" mb={2} textAlign={"center"}>
+    <Container sx={{ padding: 2 }}>
+      <Box textAlign="center" m={1}>
+        <Typography variant="h5" fontWeight="bold">
           Academic Advisories
-          {/* add description */}
-          <Typography
-            variant="body2"
-            color="gray"
-            fontStyle="italic"
-            sx={{ mt: 1 }}
-          >
-            Welcome to Academic Advisories! Find crucial updates and information
-            here to help you succeed in our class. Check often to stay on track.
-          </Typography>
         </Typography>
       </Box>
 
       <Paper
+        ref={messagesContainerRef}
         elevation={3}
         sx={{
-          height: "60vh",
+          height: "80vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
           overflowY: "auto",
-          padding: 2,
           borderRadius: 2,
           backgroundColor: "transparent",
           position: "relative",
         }}
-        ref={messagesContainerRef}
       >
-        <List
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-end",
-            alignItems: "flex-end",
-          }}
-        >
-          {messages.map((item, index) => {
-            if (item.type === "header") {
-              return (
+        <List sx={{ display: "flex", flexDirection: "column" }}>
+          {messages.length === 0 ? (
+            <ListItem sx={{ justifyContent: "center" }}>
+              <Typography
+                variant="body2"
+                fontStyle="italic"
+                color="text.secondary"
+              >
+                💬 No messages yet — New messages are displayed here...
+              </Typography>
+            </ListItem>
+          ) : (
+            messages.map((item, index) =>
+              item.type === "header" ? (
                 <ListItem
                   key={`header-${index}`}
-                  sx={{ width: "100%", justifyContent: "center" }}
+                  sx={{ justifyContent: "center" }}
                 >
-                  <Typography variant="caption" sx={{ fontWeight: "bold" }}>
-                    {item.text} ({item.date})
+                  <Typography variant="caption" fontWeight="bold">
+                    {item.text}
                   </Typography>
                 </ListItem>
-              );
-            } else {
-              return (
+              ) : (
                 <ListItem
                   key={item.messageUid}
-                  sx={{ display: "flex", alignItems: "start", marginBottom: 1 }}
+                  sx={{ alignItems: "flex-start" }}
                 >
                   <Avatar
-                    src={userCredentials.photo}
-                    sx={{ width: 40, height: 40, marginRight: 2 }}
+                    src={item.teacherPhoto}
+                    sx={{ mr: 2, width: 40, height: 40 }}
                   >
-                    {!userCredentials.photo &&
-                      item.teacherName.charAt(0).toUpperCase()}
+                    {!item.teacherPhoto && item.teacherName?.charAt(0)}
                   </Avatar>
-                  <Paper
-                    sx={{
-                      padding: 2,
-                      borderTopLeftRadius: 2,
-                      borderTopRightRadius: 15,
-                      borderBottomLeftRadius: 15,
-                      borderBottomRightRadius: 15,
-                      width: "auto",
-                      maxWidth: "90%",
-                    }}
-                  >
+
+                  <Paper sx={{ padding: 2, borderRadius: 2, maxWidth: "90%" }}>
                     <Typography
                       variant="subtitle2"
                       fontWeight="bold"
@@ -335,86 +191,103 @@ const Chat = () => {
                     >
                       {item.teacherName}
                     </Typography>
-                    <Typography variant="body2" sx={{ textAlign: "justify" }}>
-                      {item.message}
-                    </Typography>
+                    <Typography variant="body2">{item.message}</Typography>
                     <Typography
                       variant="caption"
-                      display="block"
                       textAlign="right"
-                      margin={"10px 0 -5px 0"}
+                      sx={{ display: "block", mt: 1 }}
                     >
-                      {item.time}
+                      {new Date(item.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: true,
+                      })}
                     </Typography>
                   </Paper>
                 </ListItem>
-              );
-            }
-          })}
+              )
+            )
+          )}
           <div ref={messagesEndRef} />
         </List>
-
-        {/* Scroll-to-bottom button. */}
         {showScrollButton && (
           <IconButton
             onClick={scrollToBottom}
             sx={{
-              height: "30px",
-              width: "30px",
+              height: 25,
+              width: 25,
               position: "sticky",
-              bottom: showScrollButton ? "10px" : "0",
-              borderRadius: "50%",
-              zIndex: 1000,
-              float: "right",
-              transition: "bottom 0.3s ease",
-              border: "1px solid ",
+              left: "50%",
+              bottom: "15%",
+              transform: "translateX(-50%)",
               backdropFilter: "blur(5px)",
-              backgroundColor: "rgba(255, 255, 255, 0.17)",
-              opacity: 0.5,
+              border: "1px solid",
+              zIndex: 1000,
             }}
           >
             <ArrowDownward
               sx={{
-                height: "20px",
-                width: "20px",
+                height: 15,
+                width: 15,
               }}
             />
           </IconButton>
         )}
-      </Paper>
-
-      {/* Input area for teachers. */}
-      {userCredentials.role === "teacher" ? (
-        <Box display="flex" mt={2}>
-          <TextField
-            fullWidth
-            variant="outlined"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type a message..."
-            sx={{ flexGrow: 1 }}
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={sendMessage}
-            sx={{ marginLeft: 2 }}
-          >
-            Send
-          </Button>
-        </Box>
-      ) : (
-        <Typography
-          variant="body2"
-          color="gray"
-          textAlign="center"
-          mt={2}
-          fontStyle="italic"
-          cursor="default"
+        <Box
+          sx={{
+            position: "sticky",
+            bottom: 0,
+            padding: 2,
+            backdropFilter: "blur(10px)",
+            backgroundColor: "rgba(0, 0, 0, 0.196)",
+            zIndex: 100,
+          }}
         >
-          Only teachers can send messages.
-        </Typography>
-      )}
+          {userCredentials.role === "teacher" ? (
+            <Box display="flex">
+              <TextField
+                fullWidth
+                multiline
+                variant="standard"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type a message . . .  ( Press Enter to send )"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                maxRows={6}
+                sx={{
+                  flexGrow: 1,
+                  "& .MuiInputBase-root": {
+                    paddingY: 1,
+                  },
+                  "& .MuiInputBase-input": {
+                    overflow: "scroll",
+                  },
+                }}
+              />
+
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={sendMessage}
+                sx={{ ml: 5, width: "120px" }}
+              >
+                Send
+              </Button>
+            </Box>
+          ) : (
+            <Box display="flex" justifyContent="center" alignItems="center">
+              <Typography variant="body2" fontStyle="italic">
+                Only teachers can send messages.
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      </Paper>
     </Container>
   );
 };

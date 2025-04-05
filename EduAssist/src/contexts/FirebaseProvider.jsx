@@ -355,9 +355,11 @@ const FirebaseProvider = ({ children }) => {
 
       const docRef = await addDoc(collection(db, "messages"), {
         ...messageData,
-        date: date,
-        time: time,
+        createdAt: createdAt.toISOString(), // Store full timestamp
+        date: date, // Store readable date
+        time: time, // Store readable time
       });
+
       console.log("Message stored with ID: ", docRef.id);
       return {
         success: true,
@@ -379,6 +381,15 @@ const FirebaseProvider = ({ children }) => {
         id: doc.id,
         ...doc.data(),
       }));
+
+      if (messages.length === 0) {
+        return {
+          success: true,
+          messages: [],
+          message: "Chat not yet created. New messages will appear here.",
+        };
+      }
+
       return {
         success: true,
         messages: messages,
@@ -387,8 +398,8 @@ const FirebaseProvider = ({ children }) => {
       console.error("Error fetching messages: ", error);
       return {
         success: false,
-        message: "Error fetching messages!",
         messages: [],
+        message: "Error fetching messages!",
       };
     }
   };
