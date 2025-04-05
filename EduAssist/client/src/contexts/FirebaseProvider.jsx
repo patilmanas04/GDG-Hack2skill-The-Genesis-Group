@@ -4,6 +4,8 @@ import {
   createUserWithEmailAndPassword,
   getAuth,
   signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import { getDocs, getFirestore, Timestamp } from "firebase/firestore";
 import {
@@ -99,6 +101,53 @@ const FirebaseProvider = ({ children }) => {
       return {
         success: false,
         message: "Invalid email or password!",
+      };
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    const googleProvider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log(result);
+      const user = result.user;
+      const userDetails = await getUserDetailsByUid(user.uid);
+
+      if (Object.keys(userDetails).length === 0) {
+        console.log("User not found in Firestore, creating new user document.");
+        const userCredentials = {
+          photo: user.photoURL,
+          name: user.displayName,
+          email: user.email,
+          role: "student",
+          uid: user.uid,
+        };
+
+        const docRef = await addDoc(collection(db, "users"), userCredentials);
+
+        return {
+          success: true,
+          user: userCredentials,
+          message: `User successfully signed in with Google!`,
+        };
+      }
+
+      return {
+        success: true,
+        user: userDetails,
+        message: `User successfully signed in with Google!`,
+      };
+    } catch (error) {
+      console.log(error);
+      if (error.code === "auth/popup-closed-by-user") {
+        return {
+          success: false,
+          message: "Popup closed by user!",
+        };
+      }
+      return {
+        success: false,
+        message: "Error signing in with Google!",
       };
     }
   };
@@ -409,6 +458,7 @@ const FirebaseProvider = ({ children }) => {
       value={{
         signupUserWithEmailAndPassword,
         signinUserWithEmailAndPassword,
+        signInWithGoogle,
         getUserDetailsByUid,
         signoutUser,
         addAssignment,

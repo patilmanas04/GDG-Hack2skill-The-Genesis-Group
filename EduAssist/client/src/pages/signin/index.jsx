@@ -45,7 +45,7 @@ const SignInContainer = styled(Stack)(({ theme }) => ({
 const Signin = (props) => {
   const navigate = useNavigate();
   const firebaseContext = useContext(FirebaseContext);
-  const { signinUserWithEmailAndPassword } = firebaseContext;
+  const { signinUserWithEmailAndPassword, signInWithGoogle } = firebaseContext;
   const userContext = useContext(UserContext);
   const { setUserCredentials } = userContext;
 
@@ -113,6 +113,23 @@ const Signin = (props) => {
       setPasswordErrorMessage("");
     }
     return isValid;
+  };
+
+  const handleGoogleSignIn = async () => {
+    const result = await signInWithGoogle();
+    if (result.success) {
+      setUserCredentials({
+        name: result.user.name,
+        email: result.user.email,
+        photo: result.user.photo,
+        role: result.user.role,
+        uid: result.user.uid,
+      });
+      navigate("/");
+      console.log("User signed in with Google:", result.user);
+    } else {
+      alert(result.message);
+    }
   };
 
   return (
@@ -187,7 +204,12 @@ const Signin = (props) => {
           </Box>
           <Divider>or</Divider>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Button fullWidth variant="outlined" startIcon={<GoogleIcon />}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<GoogleIcon />}
+              onClick={handleGoogleSignIn}
+            >
               Sign in with Google
             </Button>
             <Typography sx={{ textAlign: "center" }}>

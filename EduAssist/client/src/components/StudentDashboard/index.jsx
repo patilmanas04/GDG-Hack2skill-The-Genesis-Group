@@ -105,7 +105,11 @@ const StudentDashboard = () => {
       if (response.success) {
         setStudentSubmissions(response.submissions);
       } else {
-        alert(response.message);
+        setAlert({
+          type: "error",
+          message: response.message,
+        });
+        setOpenAlert(true);
       }
 
       const filteredAssignments = uploadedAssignments.filter(
@@ -151,13 +155,23 @@ const StudentDashboard = () => {
     e.preventDefault();
 
     if (!uploadedFile) {
-      alert("Please upload a file for the assignment.");
+      setAlert({
+        type: "error",
+        message: "Please select a file before submitting.",
+      });
+      setOpenAlert(true);
+
       return;
     }
 
     const { pdfUrl } = await uploadFile(uploadedFile, "student");
     if (!pdfUrl) {
-      alert("File upload failed. Please try again.");
+      setAlert({
+        type: "error",
+        message: "File upload failed. Please try again.",
+      });
+      setOpenAlert(true);
+
       return;
     }
 
@@ -173,7 +187,12 @@ const StudentDashboard = () => {
     );
 
     if (!result.success) {
-      alert(result.message);
+      setAlert({
+        type: "error",
+        message: result.message,
+      });
+      setOpenAlert(true);
+
       return;
     }
 

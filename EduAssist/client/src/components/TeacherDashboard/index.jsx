@@ -150,23 +150,48 @@ const TeacherDashboard = () => {
     e.preventDefault();
 
     if (!title) {
-      alert("Please enter a title for the assignment.");
+      setAlert({
+        type: "error",
+        message: "Please enter a title for the assignment.",
+      });
+      setOpenAlert(true);
+
       return;
     }
     if (!subject) {
-      alert("Please select a subject for the assignment.");
+      setAlert({
+        type: "error",
+        message: "Please select a subject for the assignment.",
+      });
+      setOpenAlert(true);
+
       return;
     }
     if (!uploadedFile) {
-      alert("Please upload a file for the assignment.");
+      setAlert({
+        type: "error",
+        message: "Please upload a file for the assignment.",
+      });
+      setOpenAlert(true);
+
       return;
     }
     if (!dueDate) {
-      alert("Please select a due date for the assignment.");
+      setAlert({
+        type: "error",
+        message: "Please select a due date for the assignment.",
+      });
+      setOpenAlert(true);
+
       return;
     }
     if (!uploadedAnswersFile) {
-      alert("Please upload answers for the assignment.");
+      setAlert({
+        type: "error",
+        message: "Please upload answers for the assignment.",
+      });
+      setOpenAlert(true);
+
       return;
     }
 

@@ -38,7 +38,7 @@ const SignUpContainer = styled(Stack)(({ theme }) => ({
 const SignUp = () => {
   const navigate = useNavigate();
   const firebaseContext = useContext(FirebaseContext);
-  const { signupUserWithEmailAndPassword } = firebaseContext;
+  const { signupUserWithEmailAndPassword, signInWithGoogle } = firebaseContext;
   const userContext = useContext(UserContext);
   const { setUserCredentials } = userContext;
 
@@ -112,6 +112,23 @@ const SignUp = () => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    const result = await signInWithGoogle();
+    if (result.success) {
+      setUserCredentials({
+        name: result.user.name,
+        email: result.user.email,
+        photo: result.user.photo,
+        role: result.user.role,
+        uid: result.user.uid,
+      });
+      navigate("/");
+      console.log("User signed in with Google:", result.user);
+    } else {
+      alert(result.message);
+    }
+  };
+
   return (
     <>
       <CssBaseline enableColorScheme />
@@ -165,7 +182,12 @@ const SignUp = () => {
             </Button>
           </Box>
           <Divider>or</Divider>
-          <Button fullWidth variant="outlined" startIcon={<GoogleIcon />}>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<GoogleIcon />}
+            onClick={handleGoogleSignIn}
+          >
             Sign up with Google
           </Button>
           <Typography sx={{ textAlign: "center" }}>
