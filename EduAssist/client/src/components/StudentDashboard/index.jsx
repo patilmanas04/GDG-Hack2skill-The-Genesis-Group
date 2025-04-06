@@ -69,6 +69,7 @@ const StudentDashboard = () => {
     getAllAssignments,
     getStudentSubmissions,
     addSubmission,
+    evaluateAssignement,
   } = firebaseContext;
   const userContext = useContext(UserContext);
   const {
@@ -239,6 +240,46 @@ const StudentDashboard = () => {
       message: "Assignment submitted successfully!",
     });
     setOpenAlert(true);
+
+    // Gemini Evaluation of the assignment
+    const evaluateResponse = await evaluateAssignement(
+      currentAssignment.id,
+      pdfUrl,
+      currentAssignment.answersDocUrl
+    );
+
+    console.log("5. Evaluated Response: ", evaluateResponse);
+
+    if (evaluateResponse.success) {
+      setAlert({
+        type: "success",
+        message: "Assignment evaluated successfully!",
+      });
+    } else {
+      setAlert({
+        type: "error",
+        message: evaluateResponse.message,
+      });
+    }
+
+    setOpenAlert(true);
+
+    setStudentSubmissions((prev) =>
+      prev.map((submission) => {
+        if (submission.assignmentId === currentAssignment.id) {
+          return {
+            ...submission,
+            evaluatedData: evaluateResponse.gradedResults,
+            overallGrade: evaluateResponse.overallGrade,
+            processed: evaluateResponse.success,
+          };
+        }
+        return submission;
+      })
+    );
+
+    console.log("6. Student Submissions: ", studentSubmissions);
+    console.log("7. Success Status: ", evaluateResponse.success);
   };
 
   return (

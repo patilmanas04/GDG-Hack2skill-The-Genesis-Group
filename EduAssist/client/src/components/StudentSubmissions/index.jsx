@@ -69,6 +69,10 @@ const columns = [
       );
     },
   },
+  {
+    field: "Grades",
+    width: 100,
+  },
 ];
 
 const StudentSubmissions = () => {
@@ -76,7 +80,6 @@ const StudentSubmissions = () => {
     items: [],
     quickFilterValues: [],
   });
-  const [ignoreDiacritics, setIgnoreDiacritics] = React.useState(true);
   const [rows, setRows] = React.useState([]);
 
   const userContext = useContext(UserContext);
@@ -91,7 +94,6 @@ const StudentSubmissions = () => {
         userContext.userCredentials.uid
       );
       if (response.success) {
-        console.log(response.submissions);
         setStudentSubmissions(response.submissions);
 
         const formattedRows = response.submissions.map((submission, index) => {
@@ -102,6 +104,7 @@ const StudentSubmissions = () => {
             Title: submission.assignmentTitle,
             "Submitted by": submission.studentName,
             docUrl: submission.docUrl,
+            Grades: submission.overallGrade,
           };
         });
 

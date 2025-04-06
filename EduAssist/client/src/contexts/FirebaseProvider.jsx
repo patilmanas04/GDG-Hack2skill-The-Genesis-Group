@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useState } from "react";
 import { initializeApp } from "firebase/app";
 import {
   createUserWithEmailAndPassword,
@@ -34,6 +34,8 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const FirebaseProvider = ({ children }) => {
+  const [geminiStatus, setGeminiStatus] = useState(false);
+
   const getUserDetailsByUid = async (uid) => {
     let userDetails = {};
     const q = query(collection(db, "users"), where("uid", "==", uid));
@@ -109,12 +111,10 @@ const FirebaseProvider = ({ children }) => {
     const googleProvider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      console.log(result);
       const user = result.user;
       const userDetails = await getUserDetailsByUid(user.uid);
 
       if (Object.keys(userDetails).length === 0) {
-        console.log("User not found in Firestore, creating new user document.");
         const userCredentials = {
           photo: user.photoURL,
           name: user.displayName,
@@ -453,6 +453,139 @@ const FirebaseProvider = ({ children }) => {
     }
   };
 
+  const calculateOverallGrade = (gradedResults) => {
+    let totalScore = 0;
+    let totalQuestions = 0;
+
+    gradedResults.forEach((result) => {
+      if (result.score !== undefined) {
+        totalScore += result.score;
+        totalQuestions += 1;
+      }
+    });
+
+    const evaluatedScore = totalQuestions > 0 ? totalScore / totalQuestions : 0;
+
+    let grade = "";
+
+    if (evaluatedScore == 100) {
+      grade = "O";
+    } else if (evaluatedScore >= 90) {
+      grade = "A+";
+    } else if (evaluatedScore >= 80) {
+      grade = "A";
+    } else if (evaluatedScore >= 70) {
+      grade = "B+";
+    } else if (evaluatedScore >= 60) {
+      grade = "B";
+    } else if (evaluatedScore >= 50) {
+      grade = "C+";
+    } else if (evaluatedScore >= 40) {
+      grade = "C";
+    } else if (evaluatedScore >= 30) {
+      grade = "P";
+    } else {
+      grade = "F";
+    }
+
+    return grade;
+  };
+
+  const updateSubmissionAndAddEvaluation = async (
+    assignmentId,
+    overallGrade,
+    gradedResults
+  ) => {
+    try {
+      let submissionDetails = {};
+
+      const submissionsRef = collection(db, "submissions");
+      const q = query(
+        submissionsRef,
+        where("assignmentId", "==", assignmentId)
+      );
+
+      const querySnapshot = await getDocs(q);
+
+      querySnapshot.forEach((doc) => {
+        submissionDetails = doc.data();
+        submissionDetails.id = doc.id;
+      });
+
+      await updateDoc(doc(db, "submissions", submissionDetails.id), {
+        overallGrade: overallGrade,
+        evaluatedData: gradedResults,
+        processed: true,
+      });
+
+      return {
+        success: true,
+        message: "Submission updated successfully!",
+      };
+    } catch (error) {
+      console.error("Error updating submission and adding evaluation: ", error);
+      return {
+        success: false,
+        message: "Error updating submission and adding evaluation!",
+      };
+    }
+  };
+
+  // Gemini processes
+  const evaluateAssignement = async (assignmentId, docUrl, answersDocUrl) => {
+    try {
+      const geminiResponse = await fetch("http://localhost:8080/api/process", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          studentPdfUrl: answersDocUrl,
+          teacherPdfUrl: docUrl,
+        }),
+      });
+
+      const data = await geminiResponse.json();
+      console.log("1. Gemini data: ", data);
+      if (data.error) {
+        return {
+          success: false,
+          message: "Error processing assignment!",
+        };
+      }
+
+      const gradedResults = data.data;
+
+      const overallGrade = calculateOverallGrade(gradedResults);
+
+      console.log("2. Overall Grade: ", overallGrade);
+
+      setGeminiStatus(true);
+
+      const updateResult = await updateSubmissionAndAddEvaluation(
+        assignmentId,
+        overallGrade,
+        gradedResults
+      );
+
+      console.log("4. Update result: ", updateResult);
+
+      return {
+        success: true,
+        gradedResults: gradedResults,
+        overallGrade: overallGrade,
+        message: "Assignment evaluated successfully!",
+      };
+    } catch (error) {
+      console.log(error);
+      setGeminiStatus(true);
+      return {
+        success: false,
+        message: "Error evaluating assignment!",
+      };
+    }
+  };
+
   return (
     <FirebaseContext.Provider
       value={{
@@ -471,6 +604,8 @@ const FirebaseProvider = ({ children }) => {
         getStudentSubmissionsByTeacherUid,
         storeMessage,
         fetchAllMessages,
+        evaluateAssignement,
+        geminiStatus,
       }}
     >
       {children}

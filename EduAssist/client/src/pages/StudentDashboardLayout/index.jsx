@@ -33,7 +33,7 @@ import CampaignIcon from "@mui/icons-material/Campaign";
 
 const CustomAppTitle = () => (
   <Stack direction="row" alignItems="center" spacing={2}>
-    <CloudCircleIcon fontSize="large" color="primary" />
+    <img src="/Logo.svg" alt="EduAssist Logo" width="40" height="40" />
     <Typography variant="h6">EduAssist - Student</Typography>
   </Stack>
 );
@@ -163,13 +163,6 @@ const StudentDashboardLayout = ({ window, userCredentials }) => {
 
   useEffect(() => {
     const audio = audioRef.current;
-
-    audio.addEventListener("canplaythrough", () =>
-      console.log("Notification sound ready")
-    );
-    audio.addEventListener("error", (e) =>
-      console.error("Notification sound error:", e)
-    );
 
     return () => {
       audio.removeEventListener("canplaythrough", () => {});

@@ -20,7 +20,7 @@ import Announcements from "../../components/Announcements";
 const CustomAppTitle = () => {
   return (
     <Stack direction="row" alignItems="center" spacing={2}>
-      <CloudCircleIcon fontSize="large" color="primary" />
+      <img src="/Logo.svg" alt="EduAssist Logo" width="40" height="40" />
       <Typography variant="h6">EduAssist - Teacher</Typography>
     </Stack>
   );

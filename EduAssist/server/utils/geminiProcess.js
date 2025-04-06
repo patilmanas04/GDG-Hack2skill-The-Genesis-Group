@@ -139,7 +139,7 @@ You are an expert examiner tasked with evaluating a student's answer based on a 
 - Return only valid JSON (no markdown or explanations)
 - All string values must be quoted properly
 - Decimal scores only (e.g., 2.5, 3.33)
-- Provide a grade out of 10 and breakdown of each category
+- Provide a grade out of 100 and breakdown of each category
 - Provide 2 improvement suggestions
 
 ## JSON Output Format:
@@ -147,7 +147,7 @@ You are an expert examiner tasked with evaluating a student's answer based on a 
   "question": "${question}",
   "teacher_answer": "${teacherAnswer}",
   "student_answer": "${studentAnswer}",
-  "grade": X,
+  "score": X,
   "evaluation": {
     "accuracy": X,
     "relevance": X,
@@ -188,7 +188,7 @@ You are an expert examiner tasked with evaluating a student's answer based on a 
         continue;
       }
 
-      const gradeValue = feedback?.grade || 0;
+      const gradeValue = feedback?.score || 0;
       const evaluation = {
         accuracy: Math.min(
           1,
@@ -208,7 +208,7 @@ You are an expert examiner tasked with evaluating a student's answer based on a 
         question,
         teacher_answer: teacherAnswer,
         student_answer: studentAnswer,
-        grade: convertToLetterGrade(gradeValue),
+        score: gradeValue,
         evaluation,
         improvement_suggestions: feedback?.improvement_suggestions || [],
       });
