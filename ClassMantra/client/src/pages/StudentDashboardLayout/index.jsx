@@ -175,7 +175,7 @@ const StudentDashboardLayout = ({ window, userCredentials }) => {
   }, []);
 
   useEffect(() => {
-    websocket.current = new WebSocket("ws://localhost:8080");
+    websocket.current = new WebSocket("wss://classmantra-server.onrender.com");
 
     websocket.current.onmessage = (event) => {
       console.log("WebSocket message:", event.data);
