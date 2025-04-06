@@ -138,7 +138,7 @@ const Signin = (props) => {
       <SignInContainer direction="column" justifyContent="space-between">
         <Card variant="outlined">
           {/* <SitemarkIcon /> */}
-          <h3>EduAssist</h3>
+          <h3>ClassMantra</h3>
           <Typography component="h1" variant="h4">
             Sign in
           </Typography>

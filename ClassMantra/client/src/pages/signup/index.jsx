@@ -134,7 +134,7 @@ const SignUp = () => {
       <CssBaseline enableColorScheme />
       <SignUpContainer direction="column" justifyContent="center">
         <Card variant="outlined">
-          <h3>EduAssist</h3>
+          <h3>ClassMantra</h3>
           <Typography component="h1" variant="h4">
             Sign up
           </Typography>
