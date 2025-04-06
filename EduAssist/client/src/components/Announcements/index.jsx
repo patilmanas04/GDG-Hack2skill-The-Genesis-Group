@@ -39,6 +39,9 @@ const Announcements = () => {
         if (res.success) setUserCredentials(res.userDetails);
       }
     });
+
+    document.title = "ClassMantra | Announcements";
+
     return unsubscribe;
   }, []);
 

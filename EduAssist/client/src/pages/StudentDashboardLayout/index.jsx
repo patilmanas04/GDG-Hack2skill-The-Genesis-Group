@@ -34,7 +34,7 @@ import CampaignIcon from "@mui/icons-material/Campaign";
 const CustomAppTitle = () => (
   <Stack direction="row" alignItems="center" spacing={2}>
     <img src="/Logo.svg" alt="EduAssist Logo" width="40" height="40" />
-    <Typography variant="h6">EduAssist - Student</Typography>
+    <Typography variant="h6">ClassMantra - Student</Typography>
   </Stack>
 );
 
@@ -156,6 +156,10 @@ const StudentDashboardLayout = ({ window, userCredentials }) => {
       image: userCredentials.photo,
     },
   });
+
+  useEffect(() => {
+    document.title = "ClassMantra | Student";
+  }, []);
 
   const audioRef = useRef(new Audio(notificationSound));
   const [displayMessage, setDisplayMessage] = useState("");

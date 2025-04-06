@@ -21,7 +21,7 @@ const CustomAppTitle = () => {
   return (
     <Stack direction="row" alignItems="center" spacing={2}>
       <img src="/Logo.svg" alt="EduAssist Logo" width="40" height="40" />
-      <Typography variant="h6">EduAssist - Teacher</Typography>
+      <Typography variant="h6">ClassMantra - Teacher</Typography>
     </Stack>
   );
 };
@@ -86,6 +86,10 @@ const TeacherDashboardLayout = (props) => {
       image: userCredentials.photo,
     },
   });
+
+  React.useEffect(() => {
+    document.title = "ClassMantra - Teacher";
+  }, []);
 
   const authentication = React.useMemo(() => {
     return {

@@ -99,6 +99,8 @@ const Subject = (props) => {
       }
     };
 
+    document.title = `ClassMantra | ${props.subjectName}`;
+
     fetchSubmissions();
 
     const filteredAssignments = uploadedAssignments.filter((assignment) => {

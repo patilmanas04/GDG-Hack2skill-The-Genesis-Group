@@ -120,6 +120,8 @@ const StudentDashboard = () => {
           )
       );
 
+      document.title = "ClassMantra | Student";
+
       setUploadedAssignments(filteredAssignments);
     };
 

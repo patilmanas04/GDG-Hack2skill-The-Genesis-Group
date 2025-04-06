@@ -143,6 +143,8 @@ const TeacherDashboard = () => {
       setUploadedAssignments(assignments);
     };
 
+    document.title = "ClassMantra | Teacher";
+
     fetchAssignments();
   }, []);
 

@@ -114,6 +114,8 @@ const StudentSubmissions = () => {
       }
     };
 
+    document.title = "ClassMantra | Student Submissions";
+
     fetchSubmissions();
   }, []);
 

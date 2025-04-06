@@ -71,6 +71,8 @@ const MySubmissions = () => {
       }
     };
 
+    document.title = "ClassMantra | My Submissions";
+
     fetchSubmissions();
   }, []);
 
