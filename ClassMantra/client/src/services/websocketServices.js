@@ -1,1 +1,1 @@
-export const socket = new WebSocket("ws://localhost:8080");
+export const socket = new WebSocket("wss://classmantra-server.onrender.com");

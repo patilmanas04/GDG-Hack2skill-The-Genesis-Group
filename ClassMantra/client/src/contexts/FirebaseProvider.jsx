@@ -534,16 +534,19 @@ const FirebaseProvider = ({ children }) => {
   // Gemini processes
   const evaluateAssignement = async (assignmentId, docUrl, answersDocUrl) => {
     try {
-      const geminiResponse = await fetch("http://localhost:8080/api/process", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          studentPdfUrl: answersDocUrl,
-          teacherPdfUrl: docUrl,
-        }),
-      });
+      const geminiResponse = await fetch(
+        `${import.meta.env.VITE_RENDER_LINK}/api/process`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            studentPdfUrl: answersDocUrl,
+            teacherPdfUrl: docUrl,
+          }),
+        }
+      );
 
       const data = await geminiResponse.json();
       console.log("1. Gemini data: ", data);
